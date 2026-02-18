@@ -1,0 +1,13 @@
+Role \ Category,AI Tool Leak,File Sharing,Exfil Vectors,Secrets,Untrusted SW,Access Mgmt,Auth/Phishing,Social Eng,AI Agent/MCP,Config/Posture,Comms,Network,Insider
+Developer,H,H,M,H,H,M,M,M,H,H,M,M,M
+DevOps,H,M,M,H,M,H,M,L,H,H,L,M,L
+Data Scientist,H,M,M,M,M,M,L,L,H,M,M,L,M
+Executive,H,H,M,L,M,M,M,H,L,L,H,M,M
+Sales,H,H,M,L,M,L,M,H,L,L,M,M,M
+HR,H,H,M,L,L,M,L,M,L,L,M,L,M
+Finance,H,M,M,L,L,M,M,H,L,L,M,M,M
+Legal,H,M,M,L,L,M,L,M,L,L,M,L,L
+Customer Support,H,M,M,L,L,L,M,M,L,L,H,M,L
+IT Admin,M,M,H,H,M,H,M,H,M,H,M,H,L
+General Employee,H,H,H,M,H,H,H,M,M,M,H,M,M
+Manager,M,M,M,L,L,H,L,M,L,L,M,L,L

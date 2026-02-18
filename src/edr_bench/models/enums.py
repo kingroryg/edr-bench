@@ -44,6 +44,53 @@ class AttackType(StrEnum):
     IMPACT = "impact"
 
 
+class CoachCategory(StrEnum):
+    """Categories specific to Coach security intervention scenarios."""
+
+    AI_DATA_LEAK = "ai_data_leak"
+    FILE_SHARING = "file_sharing"
+    EXFIL_VECTORS = "exfil_vectors"
+    SECRET_EXPOSURE = "secret_exposure"
+    UNTRUSTED_SOFTWARE = "untrusted_software"
+    ACCESS_MANAGEMENT = "access_management"
+    AUTH_PHISHING = "auth_phishing"
+    SOCIAL_ENGINEERING = "social_engineering"
+    AI_AGENT_MCP = "ai_agent_mcp"
+    CONFIG_POSTURE = "config_posture"
+    NETWORK = "network"
+    INSIDER_THREAT = "insider_threat"
+
+
+class DeploySurface(StrEnum):
+    """Where the Coach intervention gets deployed."""
+
+    BROWSER_EXTENSION = "browser_extension"
+    DESKTOP_AGENT = "desktop_agent"
+    IDE_PLUGIN = "ide_plugin"
+    CLI_HOOK = "cli_hook"
+    EMAIL_PLUGIN = "email_plugin"
+    SLACK_BOT = "slack_bot"
+    MOBILE_AGENT = "mobile_agent"
+
+
+class Priority(StrEnum):
+    """Scenario test priority."""
+
+    P0 = "P0"
+    P1 = "P1"
+    P2 = "P2"
+    P3 = "P3"
+
+
+class RiskLevel(StrEnum):
+    """Risk level for a scenario."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
 class Severity(StrEnum):
     """EDR finding severity levels."""
 

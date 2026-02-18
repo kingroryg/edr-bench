@@ -8,7 +8,15 @@ from typing import Any
 
 import structlog
 
-from edr_bench.models.enums import AttackType, Complexity, Platform
+from edr_bench.models.enums import (
+    AttackType,
+    CoachCategory,
+    Complexity,
+    DeploySurface,
+    Platform,
+    Priority,
+    RiskLevel,
+)
 from edr_bench.models.scenario import Scenario, SimulationStep
 
 logger = structlog.get_logger(__name__)
@@ -46,6 +54,9 @@ class CSVLoader:
             "simulation_steps",
             "expected_detections",
             "tags",
+            "deploy_surfaces",
+            "target_roles",
+            "third_party_systems",
         }
     )
 
@@ -249,8 +260,8 @@ class CSVLoader:
             for step in simulation_steps_raw
         ]
 
-        # Build the Scenario
-        scenario = Scenario(
+        # Build the base Scenario fields
+        kwargs: dict[str, Any] = dict(
             id=row["id"].strip(),
             name=row["name"].strip(),
             description=row["description"].strip(),
@@ -265,7 +276,33 @@ class CSVLoader:
             ),
             tags=tags_raw if isinstance(tags_raw, list) else [],
         )
-        return scenario
+
+        # Coach-specific fields (only set when the column is present and non-empty)
+        if row.get("category", "").strip():
+            kwargs["category"] = CoachCategory(row["category"].strip())
+        if row.get("sub_category", "").strip():
+            kwargs["sub_category"] = row["sub_category"].strip()
+        if row.get("risk_level", "").strip():
+            kwargs["risk_level"] = RiskLevel(row["risk_level"].strip().lower())
+        if row.get("deploy_surfaces", "").strip():
+            raw_surfaces = cls._parse_json_field(row["deploy_surfaces"], "deploy_surfaces")
+            kwargs["deploy_surfaces"] = [DeploySurface(s) for s in raw_surfaces] if isinstance(raw_surfaces, list) else []
+        if row.get("coach_intervention", "").strip():
+            kwargs["coach_intervention"] = row["coach_intervention"].strip()
+        if row.get("success_metric", "").strip():
+            kwargs["success_metric"] = row["success_metric"].strip()
+        if row.get("priority", "").strip():
+            kwargs["priority"] = Priority(row["priority"].strip())
+        if row.get("test_data", "").strip():
+            kwargs["test_data"] = row["test_data"].strip()
+        if row.get("target_roles", "").strip():
+            raw_roles = cls._parse_json_field(row["target_roles"], "target_roles")
+            kwargs["target_roles"] = raw_roles if isinstance(raw_roles, list) else []
+        if row.get("third_party_systems", "").strip():
+            raw_systems = cls._parse_json_field(row["third_party_systems"], "third_party_systems")
+            kwargs["third_party_systems"] = raw_systems if isinstance(raw_systems, list) else []
+
+        return Scenario(**kwargs)
 
     @staticmethod
     def _parse_json_field(value: str, field_name: str) -> Any:

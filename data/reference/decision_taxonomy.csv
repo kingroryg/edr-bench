@@ -1,0 +1,362 @@
+ID,Category,Sub-Category,Role(s),Decision / Scenario,What the User Does,Risk,Freq,MITRE ATT&CK,Atomic Red Team / Caldera Test,Static Control Today,Why Static Fails,Coach Intervention,Coach Replace?,Deploy Surface,Third-Party Systems for Test,Testbed Simulation Steps,Test Data / Fixtures,Success Metric,Priority
+1,Data Leak → AI,Paste code into AI,Developer,Paste proprietary source code into ChatGPT/Claude for debugging,Copies auth module with hardcoded API keys into AI chat for help fixing bug,CRITICAL,50-100x/day,"T1567.001 (Exfil to Code Repo)
+T1115 (Clipboard Data)","Atomic: T1567.001 (Exfil over web service)
+Custom: Clipboard→AI paste interception test
+Caldera: Stockpile collection abilities (find sensitive files → exfil to web service)","DLP (regex), CASB",Regex misses semantic code context; clipboard bypasses all; CASB only managed apps,Intercept paste: LLM classifies code sensitivity. 'Contains auth module. Anonymize?',YES,Browser Extension,ChatGPT/Claude web (free tier),"1. Open ChatGPT
+2. Paste code with AWS keys + proprietary function
+3. Verify extension intercepts
+4. Check classification (PII/secret/proprietary)","Synthetic code: AWS_SECRET_KEY, function 'calculate_margin_algo_v3', api.internal.company.com","≥95% secret detection, ≥80% proprietary code detection, <200ms latency",P0
+2,Data Leak → AI,Paste DB results with PII,"Developer, Data Scientist",Paste SQL output with customer PII into AI for query optimization,"Copies query results: names, emails, phones, purchase history into Claude",CRITICAL,10-20x/day,"T1115 (Clipboard Data)
+T1530 (Data from Cloud Storage)","Atomic: T1115 (Clipboard Data collection)
+Custom: PII-in-clipboard detection test
+Caldera: Custom ability — clipboard PII scan + exfil to GenAI",DLP (pattern),Catches SSN regex but misses contextual PII (name+email combos); blind to browser AI tools,"Detect PII via NER, offer one-click anonymization. Replace names, mask emails, preserve structure",YES,Browser Extension,ChatGPT/Claude web,"1. Paste CSV with 50 fake customer records into ChatGPT
+2. Verify PII detection
+3. Test anonymization output preserves structure
+4. Test non-PII data (should pass)","CSV: first_name, last_name, email, phone, SSN, credit_card, purchase_amount. Mix US/EU formats","≥95% PII entity detection, <2% false positive, anonymization preserves structure",P0
+3,Data Leak → AI,Upload file to AI platform,All roles,Upload XLSX/PDF/DOCX with sensitive data to AI tool,Drags Excel with financial forecasts or customer lists into ChatGPT file upload,CRITICAL,20-40x/day,"T1567 (Exfil Over Web Service)
+T1048.002 (Exfil Over Asymmetric Encrypted Protocol)","Atomic: T1567 (upload to web service)
+Atomic: T1048.002 (exfil via HTTPS — curl to file.io)
+Caldera: Exfil Compressed Archive to Dropbox/AWS",DLP (file-level),Scans email attachments but not browser uploads to AI tools,Intercept file upload. Scan content. 'This Excel has 500 customer records. Anonymize or use approved AI?',YES,Browser Extension,ChatGPT/Claude web,"1. Create XLSX/PDF/DOCX with sensitive data
+2. Drag-and-drop upload to ChatGPT
+3. Verify upload intercept
+4. Check content classification per file type","3 files: (a) XLSX customer PII, (b) PDF 'CONFIDENTIAL Q3 Revenue $847M', (c) DOCX salary table","≥90% content classification across file types, upload warned before data reaches AI",P0
+4,Data Leak → AI,Paste CRM/deal data,Sales,Copy Salesforce opportunity with pricing + competitor intel into ChatGPT,"Copies deal value, competitor analysis, customer budget from CRM into AI",HIGH,20-50x/day,"T1115 (Clipboard Data)
+T1213 (Data from Information Repositories)","Atomic: T1213 (Data from Information Repositories — SharePoint/Confluence)
+Custom: CRM-to-AI clipboard monitor",None,No DLP covers SaaS CRM → browser AI copy/paste path,"Detect business entity patterns (deal amounts, competitor names). Warn about competitive intel exposure",YES,Browser Extension,"Salesforce (sandbox or mock HTML page), ChatGPT","1. Mock Salesforce page with deal info
+2. Select + paste into ChatGPT
+3. Verify business entity detection
+4. Test with generic text (should pass)","Mock CRM: $2.3M deal, 'Competitor: Acme quoted $1.8M', customer budget range","≥80% business entity detection, <5% FP on generic business text",P1
+5,Data Leak → AI,Paste HR/employee data,HR,Use AI to draft PIP or termination letter with real employee data,Pastes name + salary + performance rating + disciplinary records into Claude,CRITICAL,5-10x/day,T1115 (Clipboard Data),"Custom: HR-sensitive pattern detection test
+No standard Atomic test — create custom ability for HR data classification",None,No DLP understands employment data context,Detect HR patterns (salary+name+rating). Offer anonymized template,YES,Browser Extension,ChatGPT/Claude web,"1. Compose: 'John Smith, $145K, 2.1/5 Q3, on PIP, considering termination'
+2. Paste into AI
+3. Verify HR classification
+4. Test anonymization","'John Smith, $145K base, 2.1/5 Q3 rating, placed on PIP Oct 15, considering termination by Dec 1'",≥90% HR-sensitive combined pattern detection,P1
+6,Data Leak → AI,Paste financial/MNPI,"Finance, Exec",Upload pre-earnings financials or M&A targets to AI,"Uploads unreleased revenue figures, acquisition targets, board materials for analysis",CRITICAL,5-10x/day,"T1115 (Clipboard Data)
+T1005 (Data from Local System)","Custom: MNPI classification test
+Atomic: T1005 (Data from Local System — find + stage sensitive files)",DLP (limited),Catches 'CONFIDENTIAL' watermark but misses unlabeled financial figures,"Detect financial patterns, classify MNPI, warn with regulatory context",YES,Browser Extension,ChatGPT/Claude web,"1. Create financial data: 'Q3 2026 Revenue: $847M (unreleased)'
+2. Paste/upload
+3. Verify MNPI classification
+4. Test labeled vs unlabeled","Spreadsheet: revenue forecasts, 'Acquisition Target: CompanyX $500M', board resolution","≥85% MNPI detection, zero FN on labeled CONFIDENTIAL",P1
+7,Data Leak → AI,Paste legal/privileged docs,Legal,"Upload contracts, litigation strategy, privilege-protected comms to AI",Uploads NDA with real client names and deal terms for clause review,CRITICAL,5-10x/day,T1115 (Clipboard Data),"Custom: Legal document classification test
+No standard Atomic — create privilege detection ability",None,No DLP understands attorney-client privilege,"Detect legal patterns (contract clauses, privilege markers). Warn about privilege waiver risk",YES,Browser Extension,ChatGPT/Claude web,"1. Create synthetic NDA with clause structure
+2. Upload to AI
+3. Verify legal doc classification
+4. Test privilege waiver warning","Synthetic NDA: party names, indemnification, 'PRIVILEGED AND CONFIDENTIAL' header","≥85% legal doc detection, privilege warning on marked docs",P2
+8,Data Leak → AI,Paste support tickets with PII,Customer Support,Copy full ticket thread with customer PII + payment info into AI for response drafting,"Copies Zendesk ticket: name, email, account ID, CC, error logs into AI",HIGH,100-200x/day,"T1115 (Clipboard Data)
+T1114 (Email Collection)","Atomic: T1114 (Email Collection — captures email content)
+Custom: Support ticket PII scan",DLP (partial),"Catches CC regex but misses account IDs, custom PII, contextual data","Scan ticket for PII, auto-redact customer identifiers, preserve technical context",YES,Browser Extension,"Zendesk/Freshdesk (mock HTML), ChatGPT","1. Mock support ticket with PII + error logs
+2. Copy-paste into AI
+3. Verify PII detection on customer data
+4. Verify technical content (stack traces) NOT flagged","Mock ticket: name, email, account #12345, last4 CC, error stack trace, product version","≥95% customer PII detection, <5% FP on technical content",P1
+9,Data Leak → AI,Paste infra configs,"Developer, DevOps","Share k8s configs, Terraform files with internal IPs and vault paths in AI chat","Pastes docker-compose.yml with internal URLs, DB connection strings, vault tokens",HIGH,5-15x/day,"T1115 (Clipboard Data)
+T1552.001 (Credentials in Files)","Atomic: T1552.001 (Unsecured Credentials in Files)
+Caldera: Stockpile credential harvesting abilities",None,No tool monitors infra config sharing to AI tools,"Detect infra patterns (internal IPs, vault paths, service mesh). Warn about topology exposure",YES,Browser Extension,ChatGPT/Claude web,"1. Create docker-compose.yml with internal endpoints
+2. Paste into AI
+3. Verify infra pattern detection
+4. Test public vs internal IPs","Config: 10.0.x.x IPs, vault.internal.company.com, mongodb://prod-db:27017, VAULT_TOKEN=hvs.xxx","≥90% internal infra detection, distinguishes internal from public IPs",P1
+10,Data Leak → Sharing,Create public doc link,All roles,"Set Google Doc to 'Anyone with link' for quick collab, forget to revoke","Sets sharing to public internet access, link persists indefinitely",HIGH,50-100x/day,"T1567.002 (Exfil to Cloud Storage)
+T1537 (Transfer to Cloud Account)","Atomic: T1567.002 (rclone to Mega/S3/Dropbox)
+Caldera: Advanced Thief profile (collection → staging → exfil to cloud)
+Custom: Google Drive share scope monitor",SSPM (discovery),Discovers public links after the fact; can't determine intent; alert goes to SOC not user,At share-time: 'This sets file to public. Set 7-day auto-expire?' Post-share: periodic review reminders,YES,Browser Extension,Google Drive (test account),"1. Open Google Drive test file
+2. Click Share → 'Anyone with link'
+3. Verify extension intercepts share dialog
+4. Test auto-expire flow","Google Workspace test account. Files: quarterly report (sensitive), public FAQ (clean)","≥95% public link detection, auto-expire suggestion shown",P0
+11,Data Leak → Sharing,Make private repo public,Developer,Change GitHub repo from private to public; repo has .env and internal configs,Makes repo public for portfolio; contains secrets and proprietary code,CRITICAL,5-10x/week,"T1567.001 (Exfil to Code Repo)
+T1552.001 (Creds in Files)","Atomic: T1567.001 (exfil to code repo)
+Atomic: T1552.001 (search filesystem for credentials)
+Caldera: Find sensitive files → stage → exfil to Git",Git monitoring (partial),Alert goes to SOC not developer; no content scan before visibility change,At visibility change: 'Repo has 3 files with API keys. Scan and clean before making public?',YES,Browser Extension,GitHub (free account),"1. Create private repo with .env + config secrets
+2. Go Settings → Change Visibility
+3. Verify extension intercepts with content scan
+4. Test clean repo (should pass)","Private repo: .env (AWS keys), config.py (DB strings), clean README, proprietary src/","≥99% secret detection, warning before visibility change completes",P0
+12,Data Leak → Sharing,Share with wrong external domain,"Sales, All","Share pricing/proposal with competitor domain, wrong recipient","Emails proposal to competitor, shares Google Sheet with wrong external domain",HIGH,5-10x/week,"T1048 (Exfil Over Alternative Protocol)
+T1567 (Exfil Over Web Service)","Custom: Recipient domain validation test
+No standard Atomic — create domain mismatch ability",Email DLP (partial),Catches some patterns in email; misses Drive sharing; no domain-vs-CRM validation,At share: 'Sharing pricing with @competitor.com — not in deal team. Continue?',YES,Browser Extension,Google Drive + mock CRM context (JSON),"1. Create test Google Sheet 'Enterprise Pricing 2026'
+2. Share with competitor domain email
+3. Verify domain mismatch warning
+4. Test approved partner (should pass)","Emails: competitor@acme-corp.com (flag), partner@approved.com (pass), personal@gmail.com (warn)","≥90% competitor domain detection, <2% FP on approved domains",P1
+13,Data Leak → Exfil,Print sensitive document,All roles,"Print doc with PII, financial data, or source code to physical/virtual printer",Sends customer list or financial report to office printer. No digital trace remains,HIGH,10-30x/day,"T1091 (Replication Through Removable Media — adjacent)
+None specific for print","No standard Atomic Red Team test for print exfil
+Caldera: Custom ability — monitor print spooler + classify content
+Custom: Print job interception + PII scan test",Print monitoring (limited),Most DLP doesn't monitor print queues; physical copy bypasses all digital controls,At print: 'Doc contains 200 customer records. Print audit logged. Continue or export redacted?',PARTIAL,Desktop Agent,Virtual PDF printer (CutePDF/CUPS-PDF),"1. Install virtual PDF printer
+2. Open doc with PII
+3. Ctrl+P
+4. Verify agent intercepts print spooler
+5. Check content classification","Test docs: (a) customer list PII, (b) financial report, (c) generic meeting notes. Virtual PDF printer","≥85% sensitive content detection in print jobs, audit log captures doc + classification + user",P1
+14,Data Leak → Exfil,Transfer files to USB,All roles,"Copy corporate files to USB drive, external hard drive, or SD card","Drags corporate files to USB for 'backup'; includes customer data, source code",CRITICAL,5-15x/day,"T1052.001 (Exfil Over Physical Medium: USB)
+T1025 (Data from Removable Media)","Atomic: T1052.001 (Exfil Over USB — create test file, copy to removable)
+Atomic: T1025 (Data from Removable Media)
+Caldera: Stockpile — find sensitive files → copy to removable",USB blocking (all-or-nothing),Full blocking kills productivity; allowlisting complex,"At copy to removable: 'Copying 15 files to USB. 3 contain customer data. Block sensitive, allow rest?'",YES,Desktop Agent,USB flash drive,"1. Prep USB
+2. Mix sensitive + clean files on desktop
+3. Copy to USB
+4. Verify per-file classification + selective blocking","Files: customer_db.xlsx (PII), source.py (proprietary), notes.txt (clean), photo.jpg (personal). USB drive","≥95% file copy to removable detected, per-file sensitivity classification works",P1
+15,Data Leak → Exfil,Transfer via Bluetooth/AirDrop,All roles,AirDrop/Bluetooth corporate files to personal device,"AirDrops customer report to phone, Bluetooth transfers code to personal laptop",HIGH,2-5x/day,T1011.001 (Exfil Over Other Network Medium: Bluetooth),"Atomic: T1011.001 (Exfil Over Bluetooth)
+Custom: AirDrop interception test
+Caldera: Custom exfil ability over Bluetooth",Bluetooth policy (limited),Disabling BT breaks headphones/mice; no content-aware filtering,At wireless transfer: 'Sending corporate file via AirDrop. Use approved sharing instead?',PARTIAL,Desktop Agent,Two devices with BT/AirDrop,"1. Enable AirDrop on test Mac
+2. AirDrop corporate file to personal device
+3. Verify agent intercepts
+4. Test personal photo (lower severity)",macOS + second Apple device. Sensitive XLSX + generic PDF,"≥90% wireless file transfer detection, content classification applied",P2
+16,Data Leak → Exfil,Clipboard to external app,All roles,Copy corporate data from internal app → paste into unauthorized external app,"Copies customer list from Salesforce, pastes into personal Google Sheet",HIGH,50-100x/day,T1115 (Clipboard Data),"Atomic: T1115 (Clipboard Data — PowerShell/xclip capture)
+Caldera: T1115 ability (clipboard collection)
+Custom: Cross-app clipboard content classification",Clipboard DLP (rare),Very few tools monitor clipboard; cross-app monitoring technically complex,Monitor clipboard when destination is external. 'Pasting customer data into personal Sheets. Use corporate sharing?',YES,Browser Ext + Desktop Agent,"Salesforce (mock), Google Sheets (personal acct)","1. Mock internal CRM page with customer table
+2. Copy data
+3. Switch to personal Gmail/Sheets
+4. Paste
+5. Verify source/destination/content detection","Mock CRM page with customer data. External targets: personal Gmail, Google Sheets, Notepad","≥90% clipboard classification at copy, source/destination context detection",P1
+17,Data Leak → Exfil,Upload to personal cloud,All roles,"Sync or upload corporate files to personal Dropbox, iCloud, OneDrive, Google Drive","Installs personal Dropbox, or uploads corporate docs to personal cloud account",HIGH,10-20x/day,"T1567.002 (Exfil to Cloud Storage)
+T1537 (Transfer to Cloud Account)","Atomic: T1567.002 (rclone to Mega, AWS S3, Dropbox)
+Caldera: Exfil to Cloud — Dropbox/AWS adversary profile
+Caldera: Scheduled Transfer (T1029) for periodic exfil",CASB (partial),Misses personal accounts on approved platforms (personal vs corp Google Drive),Detect upload to non-corporate instance: 'Uploading to personal Google Drive. Use corporate drive?',YES,Browser Ext + Desktop Agent,Personal Dropbox/Google Drive (free),"1. Login personal Google Drive
+2. Upload corporate file
+3. Verify personal vs corporate instance detection
+4. Test corporate Drive (should pass)
+5. Test rclone-based sync detection",Corporate files. Two Google accounts: corp@company.com + personal@gmail.com. Dropbox free. rclone binary for CLI testing,"≥95% personal vs corporate instance distinction, upload blocked for personal",P0
+18,Data Leak → Exfil,Send to personal webmail,All roles,Forward corporate email or attach corporate files to personal Gmail/Yahoo,Forwards deal summary to personal email for 'working from home',HIGH,10-30x/day,"T1048.002 (Exfil Over Asymmetric Encrypted Protocol)
+T1114 (Email Collection)","Atomic: T1048.002 (Exfil over HTTPS via curl to file.io)
+Atomic: T1048.003 (Exfil over SMTP via Send-MailMessage)
+Caldera: Email exfil abilities in Stockpile",Email DLP (partial),Monitors corporate email but not browser webmail; personal email is blind spot,At compose: 'Attaching corporate file to personal Gmail. Use corporate email or approved share?',YES,Browser Extension,Personal Gmail (test),"1. Open personal Gmail
+2. Compose, attach corporate file
+3. Verify extension detects attachment to personal webmail
+4. Test forwarding corporate thread to personal","Personal Gmail test account. Corporate files: customer_list.xlsx, q3_revenue.pdf","≥95% personal webmail detection, file attachment intercepted before send",P0
+19,Data Leak → Exfil,Upload to social media,"Marketing, All","Post corporate data, screenshots, or internal info on LinkedIn/Twitter/X",Shares internal dashboard screenshot or unreleased metrics on social media,HIGH,5-10x/day,T1567 (Exfil Over Web Service),"Custom: Social media upload content inspection test
+No standard Atomic — create custom web upload detection ability",Web filtering (coarse),Blocking social media entirely impractical; content-level inspection missing,At upload: 'Post contains internal dashboard screenshot. Remove confidential data?',YES,Browser Extension,LinkedIn/Twitter (test accounts),"1. Open LinkedIn
+2. Create post with corporate screenshot or metrics
+3. Verify extension inspects upload content
+4. Test personal post (should pass)","Screenshots: (a) internal Grafana with revenue, (b) Slack internal discussion, (c) vacation photo (pass)","≥80% internal content detection in uploads, <5% FP on personal content",P2
+20,Data Leak → Exfil,Send via public chat apps,All roles,"Share corporate files/data via WhatsApp Web, Telegram, Discord","Sends customer data via WhatsApp to colleague, shares doc in personal Discord",HIGH,10-30x/day,"T1567 (Exfil Over Web Service)
+T1071.001 (Web Protocols)","Custom: Chat app file upload + sensitive text detection
+Atomic: T1071.001 (Application Layer Protocol: Web)
+Caldera: Exfil to web service abilities",Chat DLP (limited),Few orgs monitor personal chat apps in browser,At send: 'Sending corporate file via WhatsApp. Use Slack/Teams instead?',YES,Browser Extension,"WhatsApp Web, Telegram Web, Discord (free)","1. Open WhatsApp Web
+2. Attach corporate file or paste sensitive text
+3. Verify detection
+4. Test personal photo/text (should pass)",WhatsApp linked to test phone. Corporate XLSX + sensitive text. Personal content for FP testing,"≥95% file upload detection in chat, ≥85% sensitive text detection",P1
+21,Data Leak → Exfil,Share screen with sensitive data visible,All roles,Screen share in Zoom/Webex showing sensitive dashboards or data,Shares screen with Salesforce customer data visible; uploads file to meeting chat with externals,MEDIUM,5-15x/day,T1113 (Screen Capture),"Atomic: T1113 (Screen Capture — screencapture/import on Mac/Linux)
+Caldera: T1113 ability (screenshot collection)
+Custom: Active window sensitivity scan during screen share",None,No tool monitors content visible during screen share,At screen share: 'Salesforce with customer data visible. Close before sharing?',PARTIAL,Desktop Agent + Browser Ext,Zoom/Webex/Teams (free tier),"1. Start Zoom meeting with external
+2. Share screen with sensitive app visible
+3. Verify agent detects sensitive window
+4. Upload file to meeting chat
+5. Clean desktop test (should pass)",Zoom free account. Mock Salesforce page with PII. Mock financial dashboard. Clean desktop,"≥80% sensitive window detection at share time, file upload to external meeting detected",P2
+22,Data Leak → Exfil,Transfer via FTP/SFTP/SCP,"Developer, IT Admin",FTP/SFTP/SCP corporate files to personal or unauthorized server,"SCPs database backup to personal VPS, or FTPs customer export to non-corp server",CRITICAL,1-5x/week,"T1048.003 (Exfil Over Unencrypted Protocol)
+T1048 (Exfil Over Alternative Protocol)","Atomic: T1048.003 (Exfil via FTP — ftp put, rclone FTP)
+Atomic: T1048 (DNS exfil via DNSExfiltrator, ICMP exfil)
+Caldera: Exfil Compressed Archive to FTP adversary profile
+Caldera: Exfil Over Alternative Protocol abilities",Network monitoring (partial),DLP monitors HTTP/HTTPS but misses FTP/SFTP/SCP protocols,At CLI transfer: 'Transferring customer_backup.sql to external IP. Not in approved destinations. Block?',PARTIAL,Desktop Agent,Docker SFTP server (atmoz/sftp) or local SSH,"1. Docker SFTP container (atmoz/sftp)
+2. SCP sensitive file to external server
+3. Verify agent detects CLI transfer
+4. Validate destination IP against approved list",Docker SFTP image. Sensitive test file. Approved destination JSON. Public test server IP,"≥90% FTP/SFTP/SCP detection, destination validation against approved list",P2
+23,Data Leak → Exfil,Use incognito to bypass controls,All roles,Open incognito to access AI tools without extension monitoring,"Opens Chrome Incognito knowing extension doesn't run, pastes data into ChatGPT",HIGH,5-10x/day,T1562.001 (Impair Defenses: Disable/Modify Tools),"Atomic: T1562.001 (Disable/Modify Tools — disable security services)
+Custom: Incognito detection + Chrome Enterprise policy enforcement test",Browser policy (partial),Chrome Enterprise can force extensions in incognito but many orgs don't configure,Detect incognito with corp data access. Force extension via Chrome Enterprise policy,PARTIAL,Desktop Agent,None (system browser),"1. Open Chrome Incognito
+2. Navigate to ChatGPT
+3. Verify desktop agent detects incognito
+4. Verify Chrome policy forces extension in incognito
+5. Standard browser test (should pass)",Chrome + test extension. Chrome Enterprise policy JSON for incognito enforcement,"≥95% incognito detection, Chrome policy correctly forces extension",P1
+24,Data Leak → Exfil,Take screenshot of sensitive content,All roles,"Screenshot support dashboard, financial data, or internal Slack with PII visible","Takes screenshot showing customer names + account balances, shares in bug report",MEDIUM,10-30x/day,T1113 (Screen Capture),"Atomic: T1113 (Screen Capture — screencapture Mac, import Linux, snippingtool Win)
+Caldera: T1113 screenshot collection ability
+Custom: Post-capture vision model PII scan",DLP (no screenshot coverage),DLP cannot inspect screenshot content; images bypass all text-based DLP,At screenshot: 'Contains visible customer data. Blur sensitive areas?' Auto-blur PII regions,PARTIAL,Desktop Agent,None (OS screenshot tools),"1. Open mock dashboard with PII
+2. Screenshot (Cmd+Shift+4 / PrtScn)
+3. Verify agent captures event
+4. Run vision model for PII detection
+5. Clean screenshot test (no PII — should pass)","Mock dashboard HTML: customer names, emails, balances. Vision model for image PII detection","≥75% PII detection in screenshots via vision model, event captured + logged",P2
+25,Data Leak → Exfil,Exfil via DNS/ICMP covert channel,"Developer, Attacker",Exfiltrate data via DNS queries or ICMP packets to evade network DLP,Uses DNSExfiltrator or custom ICMP tunnel to bypass all HTTP/HTTPS monitoring,CRITICAL,Rare / targeted,"T1048 (Exfil Over Alternative Protocol)
+T1048.001 (Exfil via Symmetric Encrypted Non-C2)","Atomic: T1048 (DNS exfil via dig/nslookup with base64 subdomain encoding)
+Atomic: T1048 (ICMP exfil via ping with encoded payload)
+Caldera: DNS exfiltration abilities in Stockpile",Network DLP,Network DLP monitors HTTP/S; DNS/ICMP channels are blind spots,"Detect anomalous DNS query patterns (high volume, long subdomains, base64 encoding). Alert + block",PARTIAL,Desktop Agent,DNS server under control (or local resolver),"1. Set up local DNS resolver
+2. Run DNSExfiltrator or custom base64-subdomain script
+3. Verify agent detects anomalous DNS patterns
+4. Test normal DNS resolution (should pass)",DNSExfiltrator tool or custom script. Test file to exfil. Local DNS resolver. Normal traffic baseline,"≥80% detection of DNS exfil patterns (long subdomains, high query rate)",P3
+26,Data Leak → Exfil,Mass file deletion (cover tracks),All roles,Mass-delete corporate files after exfiltration to cover tracks,"After USB copy, deletes local copies and empties recycle bin to hide evidence",HIGH,Rare / high-impact,"T1070.004 (Indicator Removal: File Deletion)
+T1485 (Data Destruction)","Atomic: T1070.004 (File Deletion — rm, del, shred)
+Atomic: T1485 (Data Destruction — overwrite files)
+Caldera: Indicator removal abilities in Stockpile",EDR (limited),Logs deletion but doesn't correlate with prior exfiltration,Correlate deletion with prior exfil: 'Deleted 150 files following USB transfer. Security team notified.',PARTIAL,Desktop Agent,None (local filesystem),"1. Create batch of corporate files
+2. Copy to USB
+3. Delete originals + empty recycle bin
+4. Verify agent correlates: USB copy → mass deletion
+5. Alert includes both events",100+ test files. USB drive. Timeline correlation engine in agent,"≥90% mass deletion detection, correlation with prior exfil within 24hr",P2
+27,Data Leak → Exfil,Large/anomalous volume transfer,All roles,Move unusually large data volume vs behavioral baseline,"Downloads 5GB customer data, exports entire CRM — far exceeds normal volume",HIGH,Anomaly-based,"T1030 (Data Transfer Size Limits)
+T1029 (Scheduled Transfer)","Caldera: T1030 (Data Transfer Size Limits — chunked exfil)
+Caldera: T1029 (Scheduled Transfer — cron-based periodic exfil)
+Atomic: T1567.002 (rclone exfil with large datasets)",UEBA (delayed),Flags anomalies hours/days later; no real-time intervention,Real-time: 'Downloaded 4.7GB today (avg 200MB). Includes customer_database_full.sql. Continue?',PARTIAL,Desktop Agent + Browser Ext,None (internal systems),"1. Establish baseline: small ops over simulated period
+2. Download >1GB sensitive files in 1 session
+3. Verify volume anomaly detection
+4. Verify content classification of large transfers",Baseline fixture. 1GB+ synthetic customer data. Volume threshold config,"≥85% anomaly >3x baseline, content classification of anomalous transfers",P2
+28,Data Leak → Exfil,Upload to recruitment sites,All roles (pre-departure),Upload resume with proprietary project names to job sites,"Resume mentions classified projects, internal client names, revenue figures",MEDIUM,Insider indicator,T1567 (Exfil Over Web Service),"Custom: Recruitment site upload + content inspection test
+No standard Atomic — create custom job site upload detection ability",UEBA (behavioral),Flags job site visits but can't inspect content for proprietary info,At upload: 'Resume mentions Project Phoenix (classified). Remove before uploading?',PARTIAL,Browser Extension,LinkedIn / Indeed (test accounts),"1. Navigate to LinkedIn Jobs
+2. Upload resume with internal project names
+3. Verify recruitment site detection + content inspection
+4. Clean resume test (should pass)","Two resumes: (a) internal project names + client refs, (b) generalized. Internal project dictionary","≥90% recruitment site detection, ≥70% internal reference detection in docs",P3
+29,Data Leak → Exfil,Sync via unauthorized apps,All roles,"Install Resilio Sync/Syncthing, sync corporate folders to personal device",Sync tool mirrors Documents folder with corporate files to personal laptop,HIGH,2-5x/week,"T1567.002 (Exfil to Cloud Storage)
+T1020 (Automated Exfiltration)","Atomic: T1020 (Automated Exfiltration — traffic duplication)
+Caldera: Automated collection + exfil abilities
+Custom: Sync app detection + directory sensitivity test",App blocking (partial),New sync tools emerge constantly; can't maintain blocklist,At sync: 'Resilio syncing Documents (contains corporate files) to external. Block corp folder sync?',PARTIAL,Desktop Agent,Resilio Sync / Syncthing (free),"1. Install Resilio Sync
+2. Configure sync for corporate folder
+3. Verify agent detects sync targeting corp directory
+4. Personal media folder test (lower severity)",Sync app. Corporate folder with sensitive files. Personal media folder for comparison,"≥90% unauthorized sync detection, folder sensitivity classification",P2
+30,Data Leak → Exfil,P2P / unauthorized file sharing,All roles,"Share corporate files via BitTorrent, WeTransfer, or P2P","Uses P2P for large datasets, or WeTransfer for 'quick share' bypassing corporate controls",CRITICAL,1-2x/week,"T1048 (Exfil Over Alternative Protocol)
+T1567 (Exfil Over Web Service)","Atomic: T1048 (exfil via alternative protocol)
+Custom: P2P client + WeTransfer upload detection test",Network filtering (partial),Blocks known P2P protocols but misses browser-based P2P and encrypted tunnels,At P2P: 'P2P detected. Corporate files should never go via P2P. Block and log?',YES,Desktop Agent,qBittorrent or WeTransfer (free),"1. Install qBittorrent or open WeTransfer
+2. Upload/share corporate file
+3. Verify P2P/unauthorized sharing detection
+4. Verify file content classification",qBittorrent client. WeTransfer free. Corporate XLSX + source code ZIP,"≥95% P2P/WeTransfer detection, file content classified",P2
+31,Secret Exposure,Commit secrets to git,Developer,"Push code with API keys, DB passwords, or tokens in source files",git push with AWS_SECRET_KEY or database password in config file,CRITICAL,10-20x/week,"T1552.001 (Unsecured Credentials in Files)
+T1552.004 (Private Keys)","Atomic: T1552.001 (search files for passwords — findstr, grep)
+Atomic: T1552.004 (copy private keys from .ssh)
+Caldera: Credential harvesting abilities in Stockpile",Secret scanning (post-commit),Post-commit: secret already in git history; remediation painful,Pre-commit: 'AWS key in config.py:42. Move to vault via env var?' One-click vault migration,YES,IDE Plugin + Browser Ext,"GitHub (test repo), VS Code","1. Create repo with .env containing mock secrets
+2. git add + git commit
+3. Verify pre-commit hook intercepts
+4. Test vault migration workflow
+5. Clean commit test (should pass)","Repo: .env (AWS_KEY, DB_PASS), config.py (tokens), clean_file.py. Mock vault endpoint","≥99% common secret patterns detected, pre-commit intercept before history contamination",P0
+32,Secret Exposure,Share credentials in Slack/Teams,"Developer, IT Admin","Post database password, API key, or SSH key in Slack channel or DM",Posts 'staging DB password is P@ssw0rd123' in #engineering channel,HIGH,10-30x/week,"T1552.001 (Unsecured Credentials)
+T1115 (Clipboard Data)","Custom: Message content secret pattern detection test
+Atomic: T1552.001 (search for credentials)
+Caldera: Custom ability — scan chat messages for secret patterns",Slack DLP (partial),Enterprise DLP catches some patterns; high FP; Teams minimal DLP for secrets,At send: 'Looks like an API key. Share via vault link?' One-click vault generation,YES,Browser Extension,Slack (free workspace),"1. Open Slack test workspace
+2. Type: (a) API key pattern, (b) password pattern, (c) SSH key
+3. Verify extension intercepts before send
+4. Test vault link generation
+5. Normal message test (should pass)","Slack free workspace. Patterns: AKIA..., 'password is X', SSH key header. Mock vault endpoint","≥95% secret pattern detection in chat, vault link in <2 clicks",P0
+33,Secret Exposure,Store credentials on endpoint,"Developer, All","Keep passwords.txt, .env with prod creds, SSH keys without passphrase on laptop","Has passwords.txt on Desktop, .env files with prod creds in project dirs",HIGH,Persistent,"T1552.001 (Unsecured Credentials in Files)
+T1552.004 (Private Keys)
+T1005 (Data from Local System)","Atomic: T1552.001 (find credentials: findstr, grep, Get-ChildItem)
+Atomic: T1552.004 (copy SSH private keys)
+Atomic: T1005 (stage data from local system)
+Caldera: Find Files + Credential Harvest abilities",EDR (limited),"EDR scans for malware, not secret content in user files",Periodic scan: 'Found 3 files with creds on Desktop. Move to password manager?' One-click migration,YES,Desktop Agent,1Password / Bitwarden (test vault),"1. Create: passwords.txt, .env, id_rsa (no passphrase) on Desktop
+2. Run agent scan
+3. Verify secret detection per file type
+4. Test migration workflow
+5. Clean files test (should pass)","passwords.txt (DB creds), .env (API keys), id_rsa (no passphrase). 1Password/Bitwarden test vault","≥95% secret detection in local files, migration completes successfully",P1
+34,Secret Exposure,Expose secrets in CI/CD logs,"DevOps, Developer","Print env vars in debug logs, store secrets in pipeline YAML without vault refs",GitHub Actions echoes $DATABASE_URL in debug step; secrets in build logs,CRITICAL,5-10x/week,"T1552.001 (Unsecured Credentials)
+T1059 (Command/Script Interpreter)","Atomic: T1552.001 (credential search in files/logs)
+Custom: GitHub Actions YAML secret exposure scan
+Caldera: Custom ability — CI/CD config audit",Pipeline scanning (partial),Scans configs but not runtime logs; debug mode bypasses masking,Pre-push: 'Workflow exposes DATABASE_URL in logs. Use secret masking?',PARTIAL,Browser Ext (GitHub) + IDE,GitHub Actions (free tier),"1. Create workflow YAML with echo $SECRET
+2. Push
+3. Verify extension flags secret in YAML
+4. Check runtime log scan
+5. Properly masked secrets test (should pass)",GitHub repo + Actions. Workflow: echo $DATABASE_URL vs ${{ secrets.DB_URL }},"≥90% secret exposure in YAML, pre-push warning before secrets in CI/CD logs",P1
+35,Untrusted SW,Install risky browser extension,All roles,Install Chrome extension with broad permissions from unknown publisher,Installs AI helper requesting 'Read all data on all websites' from unknown dev,CRITICAL,10-20x/week,"T1176 (Browser Extensions)
+T1059.007 (JavaScript)","Atomic: T1176 (Browser Extensions — install malicious extension)
+Caldera: Custom ability — install test extension via chrome CLI
+Custom: Extension risk scoring test",Chrome Enterprise Policy,Allowlist blocks known-bad but can't evaluate new/unknown; personal profiles bypass,At install: 'Reads all browser data. No privacy policy. Risk: session hijack. Block or review?',YES,Browser Extension,Chrome Web Store (test extension),"1. Navigate to Chrome Web Store
+2. Find extension: broad permissions, low trust
+3. Click 'Add to Chrome'
+4. Verify risk assessment
+5. Approved extension test (should pass)","Extensions: (a) unknown publisher, broad perms, low downloads, (b) approved corporate extension","≥90% correct risk assessment, approved extensions pass silently",P0
+36,Untrusted SW,Shadow SaaS with OAuth,All roles,"Sign up for unapproved SaaS with corporate email, grant OAuth access",Clicks 'Sign in with Google' granting Drive + Gmail + Calendar read,HIGH,20-50x/week,"T1550.001 (Use Alternate Auth: App Access Token)
+T1528 (Steal Application Access Token)","Atomic: T1528 (Steal App Access Token)
+Custom: OAuth consent interception + scope analysis test
+Caldera: Custom ability — enumerate OAuth tokens",CASB (discovery),Discovers post-signup; alert weeks later; no intervention at consent moment,At OAuth: 'This app requests Drive+Gmail read. Not approved. Request IT review or limit scope?',YES,Browser Extension,Test OAuth app (Google Cloud Console) or shadow SaaS,"1. Create test OAuth app requesting Drive+Gmail+Calendar
+2. Click 'Sign in with Google'
+3. Verify extension intercepts consent screen
+4. Check scope analysis
+5. Approved corp app test (should pass)",Test OAuth app via Google Cloud Console. Corporate app allowlist JSON. Approved app for FP testing,"≥95% OAuth consent interception, correct scope risk assessment",P0
+37,Untrusted SW,Install risky IDE extension,Developer,Install VS Code extension with fs + network access from unknown publisher,"Installs theme/formatter: 200 downloads, no source, full fs+net access",HIGH,5-15x/week,T1195.002 (Supply Chain: Compromise Software Supply Chain),"Custom: VS Code marketplace risk scoring test
+No standard Atomic for IDE extensions
+Caldera: Custom ability — enumerate IDE extensions + permissions",None,No tool governs IDE extension install; VS Code marketplace minimal vetting,"At install: '200 downloads, no source, fs+net access. Supply chain risk. Safer alternatives?'",YES,IDE Plugin,VS Code (free),"1. Open VS Code Extensions
+2. Find: low downloads, broad permissions
+3. Click Install
+4. Verify risk assessment
+5. Popular extension test (should pass)","Extensions: (a) low-download + fs/net, (b) popular (Prettier, ESLint). Marketplace API","≥85% risk assessment, safe alternatives for ≥70% flagged",P1
+38,Untrusted SW,Install typosquatted package,Developer,npm/pip install with typosquatted name mimicking popular library,Types 'npm install reqeusts' (typo of 'requests') or similar typosquat,CRITICAL,Constant,"T1195.002 (Supply Chain Compromise)
+T1204.002 (User Execution: Malicious File)","Atomic: T1195.002 (Supply Chain Compromise)
+Custom: Package name similarity scoring + registry metadata check
+Caldera: Custom supply chain detection abilities",SCA (post-install),SCA runs after code committed; package already installed + postinstall executed,"Pre-install: 'Did you mean ""requests"" (50M downloads)? ""reqeusts"" has 23, published yesterday.'",YES,IDE Plugin + CLI Hook,npm/PyPI (public registries),"1. Open terminal in project
+2. npm install <typosquat-name>
+3. Verify CLI hook intercepts pre-install
+4. Check name similarity score
+5. Legitimate package test (should pass)",Known typosquatting examples. Legitimate name DB. npm/pip CLI hook script,"≥95% typosquatting detection, blocked before postinstall scripts",P1
+39,Access Mgmt,Rubber-stamp access review,All roles,Click 'Approve All' on quarterly access review without evaluating,Approves all 15 systems including 8 unused in 6+ months,HIGH,Quarterly,"T1078 (Valid Accounts)
+T1098 (Account Manipulation)","Atomic: T1078 (Valid Accounts — use stale creds)
+Atomic: T1098 (Account Manipulation — add/modify accounts)
+Caldera: Privilege discovery abilities
+Custom: Access review enrichment test",IGA/IAM (checkbox),95%+ approval rate; no context; users can't evaluate,'System X: not accessed 90 days. 80% peers don't have this. Remove?' Usage data per right,YES,Browser Ext + Slack Bot,Okta/Azure AD (test tenant) or mock IGA UI,"1. Mock access review with 15 systems
+2. Inject usage data: 8 unused >90 days
+3. Present with vs without coach enrichment
+4. Measure approval rate difference","Mock IGA page. Usage data: 15 systems + last_access, peer_%, risk_level. Okta test tenant optional","Rubber-stamp drops from >90% to <60%, review <2min/item with enrichment",P0
+40,Access Mgmt,Over-provision new hire,Manager,Give new hire same access as senior 'to get them started',Gives junior (week 1) same access as senior (year 3) including prod+admin,HIGH,5-10x/week,"T1098 (Account Manipulation)
+T1078.004 (Cloud Accounts)","Atomic: T1098 (Account Manipulation — add user to group)
+Atomic: T1078.004 (Cloud Accounts — create privileged cloud user)
+Caldera: Account creation + privilege escalation abilities",RBAC (misimplemented),Managers bypass RBAC with manual grants; no tool questions scope,'Giving junior same access as senior. Start with onboarding set instead?',YES,Browser Extension,Okta/Azure AD (test) or GitHub org,"1. Open IAM/GitHub admin
+2. Add user with elevated permissions
+3. Verify over-provisioning vs role baseline
+4. Standard onboarding test (should pass)","Test IAM: Junior (5 perms), Senior (15), Admin (25). New user to provision","≥80% over-provisioning detection, onboarding template suggestion",P1
+41,Access Mgmt,Grant contractor access without expiry,"Manager, IT Admin",Give contractor full repo/prod access with no expiry date,"Adds contractor to GitHub org, write access all repos, no time limit",CRITICAL,5-10x/week,"T1098 (Account Manipulation)
+T1136 (Create Account)","Atomic: T1136 (Create Account — local/domain)
+Atomic: T1098 (Account Manipulation)
+Caldera: Account creation + privilege assignment abilities",PAM (inconsistent),PAM covers privileged; contractors get regular access that's over-privileged without expiry,"'Contractor getting prod access, no expiry. Set 30-day auto-expire? Can request renewal.'",YES,Browser Extension,GitHub (test org) or Okta (test),"1. Open GitHub org settings
+2. Invite external collaborator with full access
+3. Verify: external identity, no expiry, broad scope detected
+4. Test auto-expire suggestion flow",GitHub test org. External collaborator email. Expiry policy config (30/60/90 day defaults),"≥95% external identity detection, auto-expire shown for all contractor grants",P0
+42,Authentication,Enter creds on phishing page,All roles,Enter corporate credentials on spoofed login page,"Clicks phishing link, enters corporate password on fake SSO page",CRITICAL,Constant,"T1056.003 (Web Portal Capture)
+T1598 (Phishing for Information)","Atomic: T1056.003 (Web Portal Capture — credential harvesting page)
+Atomic: T1598 (Phishing for Information)
+Caldera: Custom phishing page + credential capture ability
+Tool: GoPhish for phishing campaigns",Email security + URL filtering,Sophisticated phishing bypasses filters; no intervention at credential ENTRY moment,At entry: 'Entering corp password on login.company-secure.xyz. Real login is login.company.com. Stop?',YES,Browser Extension,Self-hosted phishing page (GoPhish or custom HTML),"1. Deploy test phishing page (GoPhish or HTML clone of corp SSO)
+2. Navigate to page
+3. Begin entering credentials
+4. Verify extension intercepts at entry
+5. Real corp login test (should pass)",GoPhish instance or self-hosted HTML. Test domain (login.company-test.xyz). Corp login whitelist. Non-functional test creds,"≥98% phishing domain detection, <0.5% FP on legit logins",P0
+43,Authentication,Approve unexpected MFA push,All roles,Approve MFA push when not actively logging in (fatigue attack),"Gets push while not logging in, approves to stop buzzing",CRITICAL,Targeted,T1621 (Multi-Factor Authentication Request Generation),"Atomic: T1621 (MFA Request Generation — trigger push flood)
+Caldera: Custom ability — trigger MFA push via IdP API
+Tool: Evilginx2 for MFA relay testing",Phishing-resistant MFA,FIDO2/passkeys not universal; push MFA vulnerable to fatigue,'MFA push received but not logging in. Could be attacker. Deny and report?',YES,Mobile + Desktop Agent,Okta/Duo (test tenant),"1. Configure Okta/Duo with push MFA
+2. Trigger push with no active login session
+3. Verify agent detects unsolicited push
+4. Measure deny vs approve with coaching
+5. Legit MFA during login test (should pass)",Okta/Duo test tenant. Test user. Push trigger mechanism (Okta API),"≥90% unsolicited push detection, deny rate increases with coaching",P1
+44,Social Engineering,Process BEC wire transfer,Finance,Process fraudulent wire from spoofed CEO/CFO email,Receives 'CEO' email requesting $50K wire; domain slightly misspelled,CRITICAL,1-5x/month,"T1566.001 (Phishing: Spearphishing Attachment)
+T1534 (Internal Spearphishing)","Atomic: T1566.001 (Spearphishing with malicious attachment)
+Caldera: Spearphishing abilities
+Tool: GoPhish for BEC simulation
+Custom: Payment-step cross-reference test",Email security (detection),Catches known BEC but misses novel; no intervention at PAYMENT step,At payment: 'Wire from ceo@company-group.com (not real domain). Verify by phone?',YES,Browser Ext + Email Plugin,"Banking portal (sandbox), corporate email, GoPhish","1. Send BEC email from spoofed domain
+2. User goes to banking portal
+3. Verify cross-reference: email origin → payment action
+4. Legit wire request test (should pass)",Spoofed sender email. Banking sandbox. Corporate directory. Legit payment request for FP testing,≥85% BEC detection at payment step,P1
+45,AI Agent/MCP,Connect MCP with broad permissions,Developer,Configure AI agent to MCP server with fs write + DB + API access,MCP server gives AI agent production database + filesystem write + API call permissions,CRITICAL,Growing fast,"T1059 (Command/Script Interpreter)
+None specific for MCP (novel attack surface)","No standard Atomic/Caldera test — NOVEL attack surface
+Custom: MCP config file permission scope parser
+Custom: Least-privilege MCP configuration test
+Caldera MCP plugin (github.com/mitre/caldera) — can be repurposed for defensive testing",None,No tool governs MCP connections or AI agent permission scope,At MCP connect: 'fs write + DB read + API call. Agent gets prod access. Limit to read-only?',YES,IDE Plugin + Desktop Agent,"Claude Desktop / Cursor (free), test MCP server (Node.js)","1. Create MCP server with broad permissions
+2. Configure in Claude Desktop
+3. Verify config detection + permission parsing
+4. Present least-privilege recommendation
+5. Read-only MCP test (should pass)",Test MCP server (Node.js). claude_desktop_config.json / .cursor config. Permission scope definitions,"≥90% MCP config detection, correct permission parsing, least-privilege suggestion",P0
+46,AI Agent/MCP,AI agent accesses sensitive repos,Developer,AI coding assistant workspace includes repos with secrets/customer data/proprietary algos,"Cursor workspace has secret-infra, customer-data-pipeline, proprietary-ml-model repos",HIGH,Constant,T1213 (Data from Information Repositories),"Atomic: T1213 (Data from Repositories — SharePoint, Confluence)
+Custom: AI workspace sensitivity scanner
+Caldera: Repository enumeration abilities",None,No tool evaluates what data AI agents can see within workspace,'AI can see secret-infra (vault configs). Exclude sensitive repos from workspace?',YES,IDE Plugin,"VS Code / Cursor, GitHub repos (test)","1. Create workspace: public-docs, secret-infra, customer-data, ml-model
+2. Open in Cursor
+3. Verify plugin scans for sensitive repos
+4. Present exclusion recommendations
+5. Clean workspace test (should pass)","Git repos: public-docs (clean), secret-infra (vault), customer-data (PII), ml-model (proprietary)","≥85% sensitive repo detection, exclusion recommendations generated",P1
+47,Config/Posture,Deploy insecure cloud resource,"DevOps, IT Admin","Terraform: public S3, open SG 0.0.0.0/0, unencrypted DB",terraform apply creates public S3 bucket + SSH open to internet,CRITICAL,5-20x/week,"T1190 (Exploit Public-Facing Application)
+T1580 (Cloud Infrastructure Discovery)","Atomic: T1580 (Cloud Infrastructure Discovery — enumerate S3/EC2)
+Caldera: Cloud plugin abilities
+Custom: Terraform plan security scanner
+Tool: Checkov/tfsec for IaC scanning benchmarks",CSPM (post-deploy),Finds misconfigs hours after deploy; expensive to fix in prod,Pre-deploy: 'Public S3 + open port 22. Fix before apply?',PARTIAL,IDE Plugin + CLI Hook,"AWS free tier / LocalStack, Terraform CLI","1. Create Terraform: public S3 + open SG
+2. terraform plan
+3. Verify CLI hook intercepts
+4. Security assessment of planned resources
+5. Secure config test (should pass)","Terraform configs: (a) public S3 + open SG, (b) encrypted S3 + restricted SG. LocalStack or AWS free tier","≥90% insecure resource detection in plan, warning before apply",P1
+48,Config/Posture,Device: unencrypted/unpatched,All roles,"Work from device without disk encryption, outdated OS, disabled firewall","Personal laptop: no FileVault, macOS 3 months old, firewall off",MEDIUM,Persistent,"T1562.001 (Disable/Modify Tools — firewall)
+T1082 (System Information Discovery)","Atomic: T1562.001 (Disable Windows Defender/firewall)
+Atomic: T1082 (System Information Discovery — OS version check)
+Caldera: Discovery abilities for system posture",MDM (managed only),MDM covers corp devices; BYOD posture limited,"At corp login: 'No encryption, OS 3mo old. Enable encryption and update?'",PARTIAL,Desktop Agent,None (local system checks),"1. Configure test device: no encryption, old OS, firewall off
+2. Access corporate SaaS
+3. Verify posture check at access
+4. Remediation guidance shown
+5. Compliant device test (should pass)","VM with configurable: encryption, OS version, firewall. Corporate SaaS URL whitelist","≥95% posture check at access, guided remediation per failed check",P2
+49,Network,Access corp resources on public WiFi,All roles,"Connect to public WiFi, open Salesforce + email without VPN","Coffee shop WiFi, opens corporate apps, VPN not active",MEDIUM,20-50x/day,"T1040 (Network Sniffing)
+T1557 (Adversary-in-the-Middle)","Atomic: T1040 (Network Sniffing — tcpdump, tshark)
+Atomic: T1557 (AitM — ARP spoofing)
+Caldera: Network discovery abilities
+Custom: Network trust + VPN status check",VPN enforcement,VPN required but enforcement varies; split tunneling gaps,'Untrusted network. VPN not active. Connect VPN before work apps?',PARTIAL,Desktop Agent,Mobile hotspot or open WiFi AP,"1. Connect to open WiFi
+2. Open corporate SaaS
+3. Verify: untrusted network + no VPN + corp app detected
+4. VPN prompt shown
+5. Corp network test (should pass)",Mobile hotspot for untrusted. VPN client. Corporate SaaS URL list,"≥95% untrusted network detection, VPN prompt before corp data accessed",P2
+50,Insider Threat,Pre-departure data hoarding,All roles,Download excessive data after giving notice,Downloads 500MB customer data + source code in 24hr after resignation,CRITICAL,Targeted,"T1005 (Data from Local System)
+T1039 (Data from Network Shared Drive)
+T1074 (Data Staged)","Atomic: T1005 (Data from Local System — find + stage sensitive files)
+Atomic: T1039 (Data from Network Shared Drive — enumerate + copy)
+Atomic: T1074 (Data Staged — stage collected data)
+Caldera: Advanced Thief adversary profile (search → stage → compress → exfil)",DLP + UEBA (reactive),"UEBA detects days later; DLP misses USB, screenshots, personal cloud",'Download volume 15x baseline. Includes customer_database. Handover prep? Route to manager.',PARTIAL,Desktop Agent + Browser Ext,HR system integration (departure flag),"1. Establish baseline: normal ops
+2. Trigger departure flag
+3. Execute: 500MB sensitive files in 1hr
+4. Verify: volume anomaly + sensitive types + departure context
+5. Non-departure anomaly test (different context)",Baseline fixture. HR departure API/flag. 500MB synthetic data. Volume thresholds,"≥80% anomaly >3x baseline, departure context adds severity",P1

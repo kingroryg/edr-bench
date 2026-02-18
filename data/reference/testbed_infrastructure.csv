@@ -1,0 +1,32 @@
+Component,Purpose,Options,Cost,Setup,Priority
+MITRE Caldera Server,"Adversary emulation orchestration. Run exfil adversary profiles (Advanced Thief, FTP Exfil, Cloud Exfil). Automated attack chains.","Docker: docker pull mitre/caldera:latest
+Includes Stockpile plugin with exfil abilities
+New MCP plugin for LLM-driven operations
+Agents: Sandcat (Go), Manx (reverse shell)",Free,2hr,P0
+Atomic Red Team,Individual technique tests. 800+ tests mapped to ATT&CK. Run specific T-codes.,"PowerShell: Install-Module AtomicRedTeam
+Key tests: T1567 (exfil web), T1048 (alt protocol), T1052 (USB), T1115 (clipboard), T1113 (screenshot), T1552 (credentials)
+Invoke-AtomicTest T1567.002",Free,1hr,P0
+GoPhish,Phishing campaign simulation. BEC testing. Credential harvest pages.,"Docker: docker pull gophish/gophish
+Create phishing templates mimicking corp SSO
+Track: open rate, click rate, credential submit rate",Free,2hr,P1
+Chrome + Extension Dev,Primary deployment surface (65% of scenarios). Manifest V3 extension.,"Chrome Dev channel. Extension Developer Dashboard.
+npm init @anthropic/chrome-extension (scaffold)",Free,1 day,P0
+ChatGPT / Claude Web,AI tool targets for data leakage tests (T1567).,"Free tier accounts: ChatGPT, Claude, Gemini, Perplexity. Multiple AI services for coverage testing",Free,1hr,P0
+Google Workspace (test),"File sharing (T1567.002), OAuth (T1528), Drive scope tests.",Google Workspace Individual ($7.99/mo) or Cloud free tier. Test domain for realistic OAuth testing,$8-24/mo,2hr,P0
+Slack (test workspace),"Chat DLP, secret sharing (T1552), channel context.",Slack free workspace. Invite test users + external guests for channel context testing,Free,1hr,P0
+GitHub (test org),"Code repo visibility (T1567.001), secrets (T1552), CI/CD (Actions).",GitHub Free + test org. Enable Actions. Create repos with varying sensitivity levels,Free,1hr,P0
+VS Code + Extension API,"IDE plugin: developer scenarios, package management, MCP config.",VS Code (free). Extension dev kit. ONNX Runtime for local model. Marketplace API access,Free,2hr,P1
+Virtual PDF Printer,Print exfil testing without physical printer.,"CutePDF Writer (Win), CUPS-PDF (Mac/Linux). Captures output as PDF for content analysis",Free,30min,P1
+USB Flash Drive,T1052.001 removable media exfil testing.,Any USB drive. Label 'TEST'. Pre-load with test fixtures. Test selective blocking per file,$5-10,10min,P1
+Docker SFTP Server,T1048.003 FTP/SFTP exfil testing.,atmoz/sftp Docker image. Local SSH server alternative. Test destination validation,Free,30min,P2
+GoPhish Phishing Page,T1056.003 credential harvest page for browser interception testing.,Deploy clone of corp SSO on test domain. Track credential entry interception rate,Free,2hr,P1
+AWS Free Tier / LocalStack,T1580 cloud misconfiguration testing with Terraform.,AWS free tier for real. LocalStack for offline Terraform. Checkov/tfsec for IaC benchmarks,Free,2hr,P2
+Okta Developer Tenant,T1078/T1098 IAM testing. Access reviews. MFA fatigue (T1621).,"Okta Developer (free). Test users, MFA policies, access review workflows",Free,3hr,P2
+Test MCP Server,Novel: AI agent permission scope testing. Least-privilege MCP config.,Node.js MCP server with configurable permissions. Multiple scope levels for testing,Free,3hr,P0
+PII Data Generator,Synthetic test data for ALL scenarios. Multiple data types + formats.,"Python Faker: 1000 customer records, financial data, HR data, code samples. US/EU formats.
+pip install faker; python generate_test_data.py",Free,2hr,P0
+ONNX Runtime + Phi-3 Mini,Local LLM for content classification in browser extension.,ONNX Runtime Web (browser) or Node.js. Phi-3 Mini ONNX (~200MB). Quantized <100MB option,Free,4hr,P0
+DNSExfiltrator,T1048 DNS covert channel exfil testing.,github.com/Arno0x/DNSExfiltrator. Requires controlled DNS domain. Base32/64 encoding,Free,2hr,P3
+Evilginx2,T1621 MFA relay / phishing proxy testing.,github.com/kgretzky/evilginx2. Real-time MFA token capture. Advanced phishing scenarios,Free,3hr,P3
+rclone,"T1567.002 cloud exfil simulation. Supports Mega, S3, Dropbox, Google Drive.","rclone.org. Configure remotes for: personal Dropbox, S3 bucket, Mega account. Caldera integrates with rclone",Free,1hr,P1
+Config Fixtures (JSON),"Policy configs for ALL tests: allowlists, blocklists, sensitivity rules.","JSON files: corporate domains, approved apps, competitor domains, internal project names, VPN endpoints, role baselines",Free,3hr,P0
