@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provision User | Identity Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f6;
+            color: #1d1d1f;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .iam-header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0 32px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .iam-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: #00297a;
+        }
+        .iam-logo span { color: #007dc1; }
+        .iam-nav { display: flex; gap: 4px; }
+        .iam-nav a {
+            color: #5e5e62;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        .iam-nav a:hover { background: #f0f0f0; }
+        .iam-nav a.active { color: #00297a; font-weight: 600; background: #e8f4fd; }
+
+        /* Container */
+        .container {
+            max-width: 800px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .page-subtitle {
+            color: #5e5e62;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        /* Form card */
+        .form-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 28px;
+        }
+        .form-section {
+            margin-bottom: 24px;
+        }
+        .form-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .form-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+        .form-group {
+            flex: 1;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 4px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            background: #fff;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #007dc1;
+            box-shadow: 0 0 0 2px rgba(0,125,193,0.15);
+        }
+
+        /* Clone section */
+        .clone-section {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .clone-section label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+        .clone-section select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            background: #fff;
+        }
+        .clone-hint {
+            font-size: 12px;
+            color: #5e5e62;
+            margin-top: 6px;
+        }
+
+        /* Permissions grid */
+        .perms-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .perm-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.15s;
+        }
+        .perm-checkbox:hover { background: #f0f0f0; }
+        .perm-checkbox.checked {
+            background: #e8f4fd;
+            border-color: #007dc1;
+        }
+        .perm-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #007dc1;
+            cursor: pointer;
+        }
+        .perm-checkbox .perm-risk {
+            margin-left: auto;
+            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .perm-risk.sensitive { background: #fce4ec; color: #c62828; }
+        .perm-risk.normal { background: #e8f5e9; color: #2e7d32; }
+
+        /* Submit */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .cancel-btn {
+            padding: 10px 20px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            background: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .provision-btn {
+            padding: 10px 24px;
+            background: #00297a;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .provision-btn:hover { background: #001d57; }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00297a;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="iam-header">
+        <div class="iam-logo">Acme<span>Identity</span></div>
+        <div class="iam-nav">
+            <a href="#">Dashboard</a>
+            <a href="index.html">Access Reviews</a>
+            <a href="#" class="active">Provisioning</a>
+            <a href="#">Reports</a>
+            <a href="#">Settings</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="page-title">Add User</h1>
+        <p class="page-subtitle">Provision a new user account with appropriate access permissions.</p>
+
+        <div class="form-card">
+            <!-- Clone from existing -->
+            <div class="clone-section">
+                <label for="clone-user">Clone from existing user</label>
+                <select id="clone-user" onchange="handleClone()">
+                    <option value="">-- Select a user to clone permissions --</option>
+                    <option value="sarah-chen">Sarah Chen - Senior Engineer (All permissions)</option>
+                    <option value="mike-torres">Mike Torres - Product Manager (Limited)</option>
+                    <option value="jessica-rodriguez">Jessica Rodriguez - Junior Developer (Basic)</option>
+                </select>
+                <div class="clone-hint">Cloning will copy all permissions from the selected user to the new account.</div>
+            </div>
+
+            <!-- User info -->
+            <div class="form-section">
+                <h3>User Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="user-name">Full Name</label>
+                        <input type="text" id="user-name" placeholder="e.g., John Smith">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">Email</label>
+                        <input type="email" id="user-email" placeholder="john.smith@acme-corp.com">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="user-role">Role</label>
+                        <select id="user-role">
+                            <option value="junior">Junior</option>
+                            <option value="senior">Senior</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-dept">Department</label>
+                        <input type="text" id="user-dept" placeholder="e.g., Engineering">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permissions -->
+            <div class="form-section">
+                <h3>Permissions</h3>
+                <div class="perms-grid" id="perms-grid">
+                    <label class="perm-checkbox" id="perm-production-db">
+                        <input type="checkbox" value="production_db" onchange="updateCheckbox(this)"> Production DB
+                        <span class="perm-risk sensitive">Sensitive</span>
+                    </label>
+                    <label class="perm-checkbox" id="perm-admin-panel">
+                        <input type="checkbox" value="admin_panel" onchange="updateCheckbox(this)"> Admin Panel
+                        <span class="perm-risk sensitive">Sensitive</span>
+                    </label>
+                    <label class="perm-checkbox" id="perm-source-code">
+                        <input type="checkbox" value="source_code" onchange="updateCheckbox(this)"> Source Code
+                        <span class="perm-risk normal">Standard</span>
+                    </label>
+                    <label class="perm-checkbox" id="perm-customer-data">
+                        <input type="checkbox" value="customer_data" onchange="updateCheckbox(this)"> Customer Data
+                        <span class="perm-risk sensitive">Sensitive</span>
+                    </label>
+                    <label class="perm-checkbox" id="perm-financial-reports">
+                        <input type="checkbox" value="financial_reports" onchange="updateCheckbox(this)"> Financial Reports
+                        <span class="perm-risk sensitive">Sensitive</span>
+                    </label>
+                    <label class="perm-checkbox" id="perm-staging-env">
+                        <input type="checkbox" value="staging_env" onchange="updateCheckbox(this)"> Staging Env
+                        <span class="perm-risk normal">Standard</span>
+                    </label>
+                    <label class="perm-checkbox" id="perm-documentation">
+                        <input type="checkbox" value="documentation" onchange="updateCheckbox(this)"> Documentation
+                        <span class="perm-risk normal">Standard</span>
+                    </label>
+                    <label class="perm-checkbox" id="perm-internal-wiki">
+                        <input type="checkbox" value="internal_wiki" onchange="updateCheckbox(this)"> Internal Wiki
+                        <span class="perm-risk normal">Standard</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="cancel-btn" onclick="window.location.href='index.html'">Cancel</button>
+                <button class="provision-btn" onclick="provisionUser()">Provision</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        var cloneProfiles = {
+            'sarah-chen': {
+                role: 'senior',
+                department: 'Engineering',
+                permissions: ['production_db', 'admin_panel', 'source_code', 'customer_data', 'financial_reports', 'staging_env', 'documentation', 'internal_wiki']
+            },
+            'mike-torres': {
+                role: 'senior',
+                department: 'Product',
+                permissions: ['source_code', 'staging_env', 'documentation', 'internal_wiki']
+            },
+            'jessica-rodriguez': {
+                role: 'junior',
+                department: 'Engineering',
+                permissions: ['source_code', 'staging_env', 'documentation']
+            }
+        };
+
+        function handleClone() {
+            var val = document.getElementById('clone-user').value;
+            if (!val) return;
+            var profile = cloneProfiles[val];
+            if (!profile) return;
+
+            document.getElementById('user-role').value = profile.role;
+            document.getElementById('user-dept').value = profile.department;
+
+            // Uncheck all first
+            var checks = document.querySelectorAll('.perms-grid input[type="checkbox"]');
+            checks.forEach(function(cb) {
+                cb.checked = false;
+                cb.closest('.perm-checkbox').classList.remove('checked');
+            });
+
+            // Check the right ones
+            profile.permissions.forEach(function(perm) {
+                var cb = document.querySelector('.perms-grid input[value="' + perm + '"]');
+                if (cb) {
+                    cb.checked = true;
+                    cb.closest('.perm-checkbox').classList.add('checked');
+                }
+            });
+        }
+
+        function updateCheckbox(cb) {
+            if (cb.checked) {
+                cb.closest('.perm-checkbox').classList.add('checked');
+            } else {
+                cb.closest('.perm-checkbox').classList.remove('checked');
+            }
+        }
+
+        function showToast(text) {
+            var t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 2500);
+        }
+
+        function provisionUser() {
+            var name = document.getElementById('user-name').value.trim();
+            var email = document.getElementById('user-email').value.trim();
+            var role = document.getElementById('user-role').value;
+            var dept = document.getElementById('user-dept').value.trim();
+            var clonedFrom = document.getElementById('clone-user').value || null;
+
+            if (!name || !email) {
+                showToast('Please fill in name and email');
+                return;
+            }
+
+            var permissions = [];
+            var checks = document.querySelectorAll('.perms-grid input[type="checkbox"]:checked');
+            checks.forEach(function(cb) {
+                permissions.push(cb.value);
+            });
+
+            fetch('/api/provision', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    site: 'okta.example.com',
+                    action: 'provision_user',
+                    name: name,
+                    email: email,
+                    role: role,
+                    department: dept,
+                    permissions: permissions,
+                    cloned_from: clonedFrom
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() {
+                showToast('User ' + name + ' provisioned successfully');
+            })
+            .catch(function(err) {
+                console.error('Provision failed:', err);
+            });
+        }
+    </script>
+</body>
+</html>

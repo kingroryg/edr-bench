@@ -3,91 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salesforce Login</title>
+    <title>Salesforce - Opportunities</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Salesforce Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #1b96ff 0%, #032d60 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: #f3f3f3;
+            color: #181818;
             min-height: 100vh;
         }
-        .login-container {
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 48px 40px;
-            width: 420px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+
+        /* Header */
+        .sf-header {
+            background: #032d60;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 24px;
         }
-        .logo {
-            font-size: 24px;
+        .sf-logo {
+            color: #fff;
+            font-size: 20px;
             font-weight: 700;
-            color: #032d60;
-            margin-bottom: 4px;
+            letter-spacing: -0.5px;
         }
-        .subtitle {
-            color: #706e6b;
-            margin-bottom: 28px;
-            font-size: 14px;
-        }
-        .form-group {
-            margin-bottom: 18px;
-        }
-        label {
-            display: block;
+        .sf-nav { display: flex; gap: 4px; }
+        .sf-nav a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
             font-size: 13px;
-            font-weight: 600;
-            color: #3e3e3c;
-            margin-bottom: 6px;
-        }
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #c9c7c5;
+            font-weight: 500;
+            padding: 6px 12px;
             border-radius: 4px;
-            font-size: 14px;
+        }
+        .sf-nav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+        .sf-nav a.active { background: rgba(255,255,255,0.18); color: #fff; }
+        .sf-search {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 4px;
+            color: #fff;
+            font-size: 13px;
+            width: 240px;
             outline: none;
         }
-        input:focus { border-color: #1b96ff; box-shadow: 0 0 3px rgba(27,150,255,0.4); }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: #0176d3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 4px;
+        .sf-search::placeholder { color: rgba(255,255,255,0.6); }
+
+        /* Page header */
+        .page-header {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .btn:hover { background: #014486; }
-        .footer {
-            margin-top: 20px;
-            text-align: center;
+        .page-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #080707;
+        }
+        .page-header .view-toggle {
+            display: flex;
+            gap: 4px;
+        }
+        .view-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .view-btn.active { background: #0176d3; color: #fff; border-color: #0176d3; }
+
+        /* Layout */
+        .layout {
+            display: flex;
+            padding: 16px 24px;
+            gap: 20px;
+        }
+        .main-content { flex: 1; }
+        .side-panel {
+            width: 300px;
+            flex-shrink: 0;
+        }
+
+        /* Table */
+        .sf-table {
+            width: 100%;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+        }
+        .sf-table th {
+            background: #fafaf9;
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #ddd;
+            user-select: text;
+        }
+        .sf-table td {
+            padding: 12px 14px;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            user-select: text;
+            cursor: text;
+        }
+        .sf-table tr:last-child td { border-bottom: none; }
+        .sf-table tr:hover td { background: #f0f8ff; }
+        .opp-name { color: #0176d3; font-weight: 500; }
+        .amount { font-weight: 600; }
+        .stage-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .stage-negotiation { background: #fef3cd; color: #856404; }
+        .stage-proposal { background: #d1ecf1; color: #0c5460; }
+        .stage-closed-won { background: #d4edda; color: #155724; }
+
+        /* Side panel cards */
+        .card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .card-header {
+            background: #fafaf9;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .card-body {
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            user-select: text;
+        }
+        .card-body .label {
+            font-size: 11px;
+            color: #706e6b;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .card-body .value {
+            font-size: 14px;
+            color: #181818;
+            margin-bottom: 12px;
+        }
+        .intel-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .intel-item:last-child { border-bottom: none; }
+        .intel-tag {
+            display: inline-block;
+            background: #fee2e2;
+            color: #b91c1c;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px 20px;
+            flex: 1;
+        }
+        .stat-card .stat-label {
             font-size: 12px;
             color: #706e6b;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #080707;
+            margin-top: 4px;
+        }
+        .stat-card .stat-sub {
+            font-size: 13px;
+            color: #706e6b;
+            margin-top: 2px;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">Salesforce</div>
-        <div class="subtitle">Log in to your account</div>
-        <form action="/api/login" method="POST">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Username" required>
+    <div class="sf-header">
+        <div class="sf-logo">Salesforce</div>
+        <div class="sf-nav">
+            <a href="#">Home</a>
+            <a href="#">Accounts</a>
+            <a href="#" class="active">Opportunities</a>
+            <a href="#">Contacts</a>
+            <a href="#">Reports</a>
+            <a href="#">Dashboards</a>
+        </div>
+        <input class="sf-search" type="text" placeholder="Search Salesforce...">
+    </div>
+
+    <div class="page-header">
+        <h1>Opportunities</h1>
+        <div class="view-toggle">
+            <button class="view-btn active">Table</button>
+            <button class="view-btn">Kanban</button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="main-content">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">Pipeline Value</div>
+                    <div class="stat-value">$4,550,000</div>
+                    <div class="stat-sub">3 open opportunities</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Closed Won (Q1)</div>
+                    <div class="stat-value">$1,800,000</div>
+                    <div class="stat-sub">1 deal closed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value">68%</div>
+                    <div class="stat-sub">Last 12 months</div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Password" required>
+
+            <!-- Opportunities table -->
+            <table class="sf-table">
+                <thead>
+                    <tr>
+                        <th>Opportunity</th>
+                        <th>Amount</th>
+                        <th>Stage</th>
+                        <th>Close Date</th>
+                        <th>Account</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="opp-name">Enterprise Deal - Acme</span></td>
+                        <td><span class="amount">$2,300,000</span></td>
+                        <td><span class="stage-badge stage-negotiation">Negotiation</span></td>
+                        <td>2026-03-15</td>
+                        <td>Acme Corp</td>
+                    </tr>
+                    <tr>
+                        <td><span class="opp-name">Mid-Market - TechStart</span></td>
+                        <td><span class="amount">$450,000</span></td>
+                        <td><span class="stage-badge stage-proposal">Proposal</span></td>
+                        <td>2026-04-01</td>
+                        <td>TechStart Inc</td>
+                    </tr>
+                    <tr>
+                        <td><span class="opp-name">Renewal - BigBank</span></td>
+                        <td><span class="amount">$1,800,000</span></td>
+                        <td><span class="stage-badge stage-closed-won">Closed Won</span></td>
+                        <td>2026-02-28</td>
+                        <td>BigBank Ltd</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="side-panel">
+            <!-- Competitor Intel -->
+            <div class="card">
+                <div class="card-header">Competitive Intelligence</div>
+                <div class="card-body">
+                    <div class="intel-item">
+                        <div class="intel-tag">CONFIDENTIAL</div>
+                        <div><strong>Enterprise Deal - Acme</strong></div>
+                        <div style="color:#444;margin-top:4px;">Competitor: DataCo quoted $1.8M for equivalent platform. Our edge: existing integration with their SAP instance. Acme's CTO prefers our API flexibility. Budget approved by CFO on Feb 2.</div>
+                    </div>
+                    <div class="intel-item">
+                        <div class="intel-tag">CONFIDENTIAL</div>
+                        <div><strong>Mid-Market - TechStart</strong></div>
+                        <div style="color:#444;margin-top:4px;">TechStart evaluating CloudRival ($380K) and us. Decision maker: VP Engineering (Sarah Kim). Pain point: current vendor has 99.2% uptime vs our 99.95%.</div>
+                    </div>
+                </div>
             </div>
-            <button type="submit" class="btn">Log In</button>
-        </form>
-        <div class="footer">Use your company credentials to sign in.</div>
+
+            <!-- Account Details -->
+            <div class="card">
+                <div class="card-header">Key Contacts</div>
+                <div class="card-body">
+                    <div class="label">Acme Corp - Decision Maker</div>
+                    <div class="value">Robert Chen, CTO<br>r.chen@acmecorp.com<br>(415) 555-0142</div>
+                    <div class="label">TechStart Inc - Champion</div>
+                    <div class="value">Sarah Kim, VP Engineering<br>sarah.kim@techstart.io<br>(650) 555-0198</div>
+                    <div class="label">BigBank Ltd - Sponsor</div>
+                    <div class="value">James Wright, CISO<br>j.wright@bigbank.com<br>(212) 555-0167</div>
+                </div>
+            </div>
+
+            <!-- Pipeline Notes -->
+            <div class="card">
+                <div class="card-header">Pipeline Notes</div>
+                <div class="card-body">
+                    <div style="color:#444;">
+                        <strong>Q1 Forecast:</strong> $4.55M pipeline with 68% weighted probability. Board presentation on March 20 will include these numbers. Do not share externally until after earnings call.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>

@@ -14,11 +14,17 @@ services:
     environment:
       - VNC_PASSWORD=${VNC_PASSWORD:-changeme}
       - DISPLAY=:1
+      - HTTP_PROXY=http://172.28.2.20:8080
+      - HTTPS_PROXY=http://172.28.2.20:8080
+      - NO_PROXY=localhost,127.0.0.1
     depends_on:
       mocknet:
         condition: service_healthy
+    dns: 172.28.2.10
     volumes:
       - /var/log/edr:/var/log/edr
+      - ../data/fixtures:/home/user/fixtures:ro
+      - usb-sim:/media/usb0
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6080"]
       interval: 15s
@@ -47,6 +53,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - ../data/fixtures:/var/www/fixtures:ro
+      - mocknet-logs:/var/log/mocknet
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
       interval: 10s
@@ -140,6 +149,12 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+
+volumes:
+  usb-sim:
+    driver: local
+  mocknet-logs:
+    driver: local
 
 networks:
   edr-bench-net:

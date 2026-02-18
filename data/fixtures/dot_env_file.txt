@@ -1,0 +1,64 @@
+# Acme Corp Platform - Production Environment Configuration
+# Deployed via: Ansible playbook deploy-platform.yml
+# Last rotation: 2026-01-20
+
+# AWS Credentials
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+AWS_DEFAULT_REGION=us-east-1
+AWS_ACCOUNT_ID=123456789012
+
+# Primary Database
+DATABASE_URL=postgresql://admin:secret@prod-db.internal:5432/main
+DATABASE_POOL_SIZE=25
+DATABASE_TIMEOUT=30
+
+# MongoDB
+MONGODB_URI=mongodb://svc_app:M0ng0_Pr0d_2026!@prod-db.internal:27017/customers?replicaSet=rs0
+
+# Redis
+REDIS_URL=redis://:authpass@cache.internal:6379
+REDIS_POOL_SIZE=10
+
+# Stripe Payment Processing
+STRIPE_PUBLISHABLE_KEY=pk_test_FAKE51ABC123DEF456GHI789JKL
+STRIPE_SECRET_KEY=sk_test_FAKE51ABC123DEF456GHI789JKL012MNO345PQR678
+STRIPE_WEBHOOK_SECRET=whsec_AbCdEfGhIjKlMnOpQrStUvWxYz012345
+
+# Auth and Session
+JWT_SECRET=super-secret-jwt-key-do-not-share
+JWT_EXPIRY=3600
+SESSION_SECRET=s3ss10n_s3cr3t_k3y_pr0d_2026
+COOKIE_DOMAIN=.acmeplatform.com
+
+# Email (SendGrid)
+SENDGRID_API_KEY=SG.AbCdEfGhIjKlMnOpQrStUv.WxYz0123456789AbCdEfGhIjKlMnOpQrStUvWxYz
+EMAIL_FROM=noreply@acmeplatform.com
+
+# Vault
+VAULT_ADDR=https://vault.internal.company.com:8200
+VAULT_TOKEN=hvs.CAESIJDm8kV2nR7pL4qWxJ1cT3bFhY6dA0eU5gI8oSzQB
+VAULT_NAMESPACE=platform/prod
+
+# Monitoring
+DATADOG_API_KEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+DATADOG_APP_KEY=q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2g3h4i5j6
+SENTRY_DSN=https://abc123@o456789.ingest.sentry.io/1234567
+
+# Feature Flags
+LAUNCHDARKLY_SDK_KEY=sdk-12345678-abcd-efgh-ijkl-mnopqrstuvwx
+
+# Internal Services
+USER_SERVICE_URL=http://10.0.1.20:4000
+ANALYTICS_SERVICE_URL=http://10.0.1.30:5000
+NOTIFICATION_SERVICE_URL=http://10.0.1.40:6000
+
+# Encryption
+ENCRYPTION_KEY=aes-256-gcm:k3y_m4t3r14l_pr0d_2026_d0_n0t_sh4r3
+ENCRYPTION_IV_PREFIX=acme-prod-
+
+# Application
+APP_ENV=production
+APP_PORT=3000
+APP_LOG_LEVEL=info
+CORS_ORIGINS=https://app.acmeplatform.com,https://admin.acmeplatform.com

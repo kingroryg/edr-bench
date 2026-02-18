@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from mitmproxy import http
 
 LOG_FILE = "/flows/traffic.jsonl"
-MAX_BODY_LENGTH = 4096
+MAX_BODY_LENGTH = 1_048_576  # 1MB -- benchmark needs full content for ground truth
 
 
 class TrafficLogger:

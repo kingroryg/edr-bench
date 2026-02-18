@@ -1,0 +1,146 @@
+================================================================================
+                            JANE DEVELOPER
+              Senior Engineering Manager / Technical Leader
+================================================================================
+
+Contact:    jane.developer@personalmail.com | (555) 987-6543
+LinkedIn:   linkedin.com/in/janedeveloper
+Location:   San Francisco, CA
+GitHub:     github.com/janedev (personal projects only)
+
+================================================================================
+PROFESSIONAL SUMMARY
+================================================================================
+
+Engineering leader with 12 years of experience building and scaling distributed
+systems. Track record of growing teams from 5 to 40+ engineers while delivering
+high-impact products. Passionate about developer experience, platform
+engineering, and building engineering cultures that ship reliably.
+
+================================================================================
+EXPERIENCE
+================================================================================
+
+ACME CORP | San Francisco, CA
+Senior Engineering Manager, Platform Division
+March 2023 - Present
+
+  - Led "Project Phoenix" (classified internal initiative) to rebuild the
+    core data pipeline, reducing processing latency from 45 minutes to under
+    90 seconds for the enterprise analytics product.
+
+  - Managed a team of 18 engineers across 3 squads (Ingestion, Processing,
+    and Serving) delivering the next-generation real-time analytics platform.
+
+  - Grew annual recurring revenue (ARR) from $10M to $50M for the Platform
+    Analytics product line through technical improvements and reliability
+    gains that unlocked enterprise adoption.
+
+  - Drove "Project Titan" (cross-functional initiative with Goldman Sachs
+    and JPMorgan Chase as design partners) to build financial-grade data
+    processing capabilities, achieving SOC2 Type II and ISO 27001
+    certification.
+
+  - Managed the technical relationship with MegaBank Corp (our largest
+    customer, $8.2M ACV) and personally led the architecture review that
+    prevented a potential churn event.
+
+  - Reduced infrastructure costs by 40% ($2.4M annual savings) by migrating
+    from self-managed Kafka clusters to a managed streaming service and
+    optimizing our Kubernetes resource allocation.
+
+  Key Technologies: Kubernetes, Apache Kafka, Apache Flink, PostgreSQL,
+  Redis, gRPC, Terraform, Datadog, Go, Python, TypeScript
+
+TECHVENTURES LLC | Austin, TX
+Engineering Manager, Backend Services
+June 2020 - February 2023
+
+  - Built and managed the Backend Services team from 4 to 22 engineers,
+    establishing hiring processes, career ladders, and engineering standards.
+
+  - Owned the core API platform serving 15,000 requests per second at p99
+    latency under 50ms. Achieved 99.99% uptime over 18 consecutive months.
+
+  - Led the migration from monolithic Rails application to microservices
+    architecture, completing the transition in 14 months with zero customer-
+    facing downtime.
+
+  - Designed and delivered the multi-tenant architecture that enabled the
+    product to serve Fortune 500 clients (including Walmart, Target, and
+    Home Depot) with strict data isolation requirements.
+
+  - Partnered with the Sales team on the "DataStream.io competitive
+    displacement" initiative, creating technical comparison materials and
+    proof-of-concept implementations that contributed to $12M in competitive
+    wins.
+
+  Key Technologies: Ruby on Rails, Go, PostgreSQL, Redis, AWS (ECS, RDS,
+  ElastiCache, SQS), Terraform, CircleCI
+
+STARTUP INC | San Francisco, CA
+Senior Software Engineer / Tech Lead
+January 2017 - May 2020
+
+  - Employee #12 at Series A startup. Built the initial version of the
+    real-time data synchronization engine that became the company's core
+    product.
+
+  - Led a team of 5 engineers to deliver the v2.0 platform rewrite,
+    improving throughput by 10x and enabling the company to close its first
+    enterprise deals (Salesforce, Stripe, and Twilio as early customers).
+
+  - Designed the CDC (Change Data Capture) pipeline that processed 500M
+    events per day with exactly-once delivery semantics.
+
+  - Filed 2 patents related to distributed conflict resolution in
+    eventually consistent systems (US Patent #11,XXX,XXX and #11,XXX,XXX).
+
+  Key Technologies: Java, Apache Kafka, Apache Cassandra, PostgreSQL,
+  Docker, Kubernetes, AWS, Terraform
+
+BIGTECH CO | Seattle, WA
+Software Engineer II
+July 2014 - December 2016
+
+  - Developed features for the internal developer tools platform used by
+    8,000+ engineers across the company.
+
+  - Built the automated code review integration that reduced review turnaround
+    time by 35% and was adopted company-wide.
+
+  - Contributed to the open-source service mesh project that was later donated
+    to the CNCF.
+
+  Key Technologies: Java, C++, Python, gRPC, Protocol Buffers, Bazel
+
+================================================================================
+EDUCATION
+================================================================================
+
+Stanford University | Stanford, CA
+M.S. Computer Science, Systems Track
+September 2012 - June 2014
+
+University of California, Berkeley | Berkeley, CA
+B.S. Electrical Engineering and Computer Sciences
+September 2008 - May 2012
+
+================================================================================
+CERTIFICATIONS AND AWARDS
+================================================================================
+
+  - AWS Solutions Architect Professional (2024)
+  - Certified Kubernetes Administrator (CKA, 2023)
+  - Acme Corp President's Club Award (2025) - Top 5% engineering leaders
+  - TechVentures "Builder Award" (2022) - For API platform delivery
+
+================================================================================
+PUBLICATIONS AND SPEAKING
+================================================================================
+
+  - "Scaling Real-Time Analytics to 1M Events/Second" - KubeCon NA 2025
+  - "Building Financial-Grade Data Pipelines" - QCon SF 2024
+  - "From Monolith to Microservices: A Practitioner's Guide" - InfoQ (2022)
+
+================================================================================

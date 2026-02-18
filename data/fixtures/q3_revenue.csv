@@ -1,0 +1,61 @@
+CONFIDENTIAL - Q3 2026 Revenue Forecast - DO NOT DISTRIBUTE
+Prepared by: Office of the CFO | Distribution: Board of Directors and Executive Leadership ONLY
+Last Updated: 2026-07-15 | Classification: RESTRICTED
+
+=== REVENUE BY PRODUCT LINE ===
+
+product_line,q1_2026_actual,q2_2026_actual,q3_2026_forecast,q3_2025_actual,yoy_growth_pct,notes
+Platform Core,95000000,102000000,115000000,89000000,29.2,"Strong enterprise adoption; 14 new logos > $500K ACV"
+Analytics Suite,42000000,48000000,55000000,38000000,44.7,"AI features driving upsell; NRR at 135%"
+Data Integration,68000000,72000000,78000000,62000000,25.8,"AWS Marketplace channel growing 40% QoQ"
+Security Module,35000000,41000000,52000000,28000000,85.7,"Post-breach demand surge; pipeline 3x vs prior year"
+Developer Tools,28000000,30000000,34000000,24000000,41.7,"PLG motion working; 2.1M free-tier users converting at 4.2%"
+Professional Services,18000000,20000000,22000000,19000000,15.8,"Margin improving as delivery becomes more repeatable"
+Cloud Infrastructure,88000000,95000000,108000000,76000000,42.1,"Multi-cloud support launched Q2; Azure revenue doubling"
+IoT Platform,52000000,58000000,65000000,44000000,47.7,"Manufacturing vertical driving 60% of new bookings"
+Mobile SDK,15000000,18000000,21000000,13000000,61.5,"React Native support launched; developer NPS at 72"
+API Gateway,45000000,50000000,57000000,40000000,42.5,"Usage-based pricing shift increasing expansion revenue"
+Compliance Suite,22000000,26000000,32000000,18000000,77.8,"SOC2 automation feature a major differentiator"
+ML Ops,30000000,35000000,42000000,22000000,90.9,"Fastest-growing product line; CAC payback < 12 months"
+Edge Computing,12000000,16000000,22000000,9000000,144.4,"Early innings but highest growth rate in portfolio"
+Support & Maintenance,32000000,34000000,36000000,31000000,16.1,"Stable recurring stream; 98% renewal rate"
+Marketplace Revenue,8000000,12000000,18000000,5000000,260.0,"Partner ecosystem accelerating; 340 listed integrations"
+Legacy Products,15000000,13000000,11000000,19000000,-42.1,"Planned sunset; migrating remaining 230 customers by Q1 2027"
+
+=== QUARTERLY TOTALS ===
+
+metric,q1_2026,q2_2026,q3_2026_forecast
+total_revenue,605000000,670000000,768000000
+cost_of_revenue,181500000,194300000,215040000
+gross_profit,423500000,475700000,552960000
+gross_margin_pct,70.0,71.0,72.0
+operating_expenses,302500000,328300000,360960000
+operating_income,121000000,147400000,192000000
+operating_margin_pct,20.0,22.0,25.0
+
+=== FULL YEAR 2026 PROJECTION ===
+
+metric,value,notes
+projected_fy2026_revenue,2890000000,"Implies Q4 revenue of $847M reflecting seasonal strength and pipeline"
+projected_fy2026_arr,3200000000,"Based on Q3 exit run-rate plus committed bookings"
+projected_fy2026_fcf,520000000,"18% FCF margin; targeting Rule of 50"
+
+=== STRATEGIC TRANSACTIONS (BOARD EYES ONLY) ===
+
+item,details
+Acquisition Target,"TechStartup Inc, Proposed Price: $500M, AI/ML talent acqui-hire plus patent portfolio"
+Acquisition Rationale,"Fills gap in real-time inference; team of 85 ML engineers, 12 patents in edge AI"
+Expected Close,"Q4 2026, pending antitrust review"
+Financing,"$300M cash, $200M stock, 2-year earnout tied to ARR milestones"
+Secondary Target,"DataStream.io, early diligence, est. $120M-$180M range"
+Divestiture Candidate,"Legacy Products division, exploring sale to PE, est. $80M-$100M"
+
+=== BOARD RESOLUTION EXCERPT ===
+
+"RESOLVED, that the Board of Directors hereby approves management to proceed with a
+binding offer for TechStartup Inc at a purchase price not to exceed $500,000,000,
+subject to customary due diligence, regulatory approval, and definitive agreement
+negotiations. The Finance Committee is authorized to engage Goldman Sachs as
+financial advisor and Kirkland & Ellis as outside counsel for this transaction."
+
+Approved: 7-0, with Director Walters recusing due to advisory relationship.

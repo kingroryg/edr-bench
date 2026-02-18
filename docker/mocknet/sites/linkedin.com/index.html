@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn - Feed</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f2ee;
+            color: #191919;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .li-header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0 24px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .li-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .li-logo svg { width: 34px; height: 34px; }
+        .li-search {
+            padding: 6px 12px 6px 32px;
+            background: #edf3f8;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 280px;
+            outline: none;
+        }
+        .li-search:focus { border: 1px solid #191919; }
+        .li-nav {
+            display: flex;
+            gap: 24px;
+            margin-left: auto;
+        }
+        .li-nav a {
+            text-decoration: none;
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .li-nav a:hover { color: #191919; }
+        .li-nav a svg { width: 24px; height: 24px; fill: currentColor; }
+
+        /* Layout */
+        .feed-layout {
+            max-width: 1128px;
+            margin: 20px auto;
+            padding: 0 16px;
+            display: flex;
+            gap: 24px;
+        }
+
+        /* Left sidebar */
+        .left-sidebar {
+            width: 225px;
+            flex-shrink: 0;
+        }
+        .profile-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .profile-banner {
+            height: 56px;
+            background: linear-gradient(135deg, #0A66C2, #004182);
+        }
+        .profile-info {
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #0A66C2;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin: -40px auto 8px;
+            border: 3px solid #fff;
+        }
+        .profile-name { font-size: 16px; font-weight: 600; }
+        .profile-title { font-size: 12px; color: #666; margin-top: 2px; }
+
+        /* Main feed */
+        .main-feed {
+            flex: 1;
+            max-width: 560px;
+        }
+
+        /* Create post */
+        .create-post {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .post-trigger {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+        .post-trigger .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #0A66C2;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .post-trigger .input-fake {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #c0c0c0;
+            border-radius: 24px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+        }
+        .post-trigger .input-fake:hover { background: #f4f2ee; }
+        .post-actions {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .post-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: none;
+            background: none;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .post-action-btn:hover { background: #e8e8e8; }
+        .post-action-btn svg { width: 20px; height: 20px; }
+
+        /* Composer modal */
+        .composer-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .composer-overlay.active { display: flex; }
+        .composer-modal {
+            background: #fff;
+            border-radius: 8px;
+            width: 560px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .composer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .composer-header h3 { font-size: 18px; }
+        .composer-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .composer-body { padding: 16px 20px; flex: 1; }
+        .composer-body textarea {
+            width: 100%;
+            min-height: 200px;
+            border: none;
+            font-size: 15px;
+            line-height: 1.5;
+            outline: none;
+            resize: vertical;
+            font-family: inherit;
+            color: #191919;
+        }
+        .composer-body textarea::placeholder { color: #999; }
+        .composer-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .composer-tools { display: flex; gap: 4px; }
+        .tool-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #666;
+            display: flex;
+        }
+        .tool-btn:hover { background: #e8e8e8; }
+        .tool-btn svg { width: 20px; height: 20px; }
+        .post-btn {
+            padding: 8px 20px;
+            background: #0A66C2;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .post-btn:hover { background: #004182; }
+
+        /* Feed posts */
+        .feed-post {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .feed-post-header {
+            display: flex;
+            gap: 10px;
+            padding: 16px 16px 8px;
+        }
+        .feed-post-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .feed-post-meta .name { font-size: 14px; font-weight: 600; }
+        .feed-post-meta .title { font-size: 12px; color: #666; }
+        .feed-post-meta .time { font-size: 12px; color: #999; }
+        .feed-post-body {
+            padding: 0 16px 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Right sidebar */
+        .right-sidebar {
+            width: 300px;
+            flex-shrink: 0;
+        }
+        .sidebar-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .sidebar-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+        .jobs-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            text-decoration: none;
+            color: #0A66C2;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .jobs-link:hover { text-decoration: underline; }
+
+        .file-input { display: none; }
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0A66C2;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 2000;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="li-header">
+        <div class="li-logo">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z" fill="#0A66C2"/>
+            </svg>
+        </div>
+        <input class="li-search" type="text" placeholder="Search">
+        <div class="li-nav">
+            <a href="#">
+                <svg viewBox="0 0 24 24"><path d="M23 9v2h-2v7a3 3 0 01-3 3h-4v-6h-4v6H6a3 3 0 01-3-3v-7H1V9l11-7z"/></svg>
+                Home
+            </a>
+            <a href="#">
+                <svg viewBox="0 0 24 24"><path d="M12 16v6H3v-6a3 3 0 013-3h3a3 3 0 013 3zm5.5-3A3.5 3.5 0 1014 9.5a3.5 3.5 0 003.5 3.5zm1 2h-2a2.5 2.5 0 00-2.5 2.5V22h7v-4.5a2.5 2.5 0 00-2.5-2.5zM7.5 2A4.5 4.5 0 1012 6.5 4.49 4.49 0 007.5 2z"/></svg>
+                Network
+            </a>
+            <a href="jobs.html">
+                <svg viewBox="0 0 24 24"><path d="M17 6V5a3 3 0 00-3-3h-4a3 3 0 00-3 3v1H2v4a3 3 0 003 3h14a3 3 0 003-3V6zM9 5a1 1 0 011-1h4a1 1 0 011 1v1H9zm10 9a4 4 0 003-1.38V17a3 3 0 01-3 3H5a3 3 0 01-3-3v-4.38A4 4 0 005 14z"/></svg>
+                Jobs
+            </a>
+            <a href="#">
+                <svg viewBox="0 0 24 24"><path d="M16 4H8a7 7 0 000 14h4v4l8.16-5.39A6.78 6.78 0 0023 11a7 7 0 00-7-7z"/></svg>
+                Messaging
+            </a>
+        </div>
+    </div>
+
+    <div class="feed-layout">
+        <div class="left-sidebar">
+            <div class="profile-card">
+                <div class="profile-banner"></div>
+                <div class="profile-info">
+                    <div class="profile-avatar">U</div>
+                    <div class="profile-name">User</div>
+                    <div class="profile-title">Software Engineer at Acme Corp</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-feed">
+            <!-- Create post -->
+            <div class="create-post">
+                <div class="post-trigger" onclick="openComposer()">
+                    <div class="avatar">U</div>
+                    <div class="input-fake">Start a post</div>
+                </div>
+                <div class="post-actions">
+                    <button class="post-action-btn" onclick="document.getElementById('media-input').click()">
+                        <svg viewBox="0 0 24 24" fill="#378fe9"><path d="M19 4H5a3 3 0 00-3 3v10a3 3 0 003 3h14a3 3 0 003-3V7a3 3 0 00-3-3zm1 13a1 1 0 01-.29.71L16 14l-2 2-6-6-4 4V7a1 1 0 011-1h14a1 1 0 011 1z"/></svg>
+                        Photo
+                    </button>
+                    <input type="file" id="media-input" class="file-input" accept="image/*" onchange="handleMediaUpload(this)">
+                    <button class="post-action-btn">
+                        <svg viewBox="0 0 24 24" fill="#c37d16"><path d="M19 4H5a3 3 0 00-3 3v10a3 3 0 003 3h14a3 3 0 003-3V7a3 3 0 00-3-3zm-9 12V8l6 4z"/></svg>
+                        Video
+                    </button>
+                    <button class="post-action-btn">
+                        <svg viewBox="0 0 24 24" fill="#e06847"><path d="M3 3v15c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V3H3zm13 10H8v-2h8v2zm2-4H6V7h12v2z"/></svg>
+                        Article
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feed posts -->
+            <div class="feed-post">
+                <div class="feed-post-header">
+                    <div class="feed-post-avatar" style="background:#0A66C2">SC</div>
+                    <div class="feed-post-meta">
+                        <div class="name">Sarah Chen</div>
+                        <div class="title">VP Engineering at Acme Corp</div>
+                        <div class="time">2h ago</div>
+                    </div>
+                </div>
+                <div class="feed-post-body">
+                    Excited to share that our engineering team has grown 40% this year! We're now 85 strong and shipping faster than ever. Proud of what we've built together. If you're looking for your next challenge, we're hiring across the stack. DM me!
+                </div>
+            </div>
+
+            <div class="feed-post">
+                <div class="feed-post-header">
+                    <div class="feed-post-avatar" style="background:#e06847">MT</div>
+                    <div class="feed-post-meta">
+                        <div class="name">Mike Torres</div>
+                        <div class="title">Senior Product Manager</div>
+                        <div class="time">5h ago</div>
+                    </div>
+                </div>
+                <div class="feed-post-body">
+                    Just wrapped up our product roadmap for H1 2026. Key themes: AI-powered workflows, enterprise API expansion, and SOC2 Type II compliance. The market opportunity in enterprise automation is massive. Stay tuned for some big announcements next month.
+                </div>
+            </div>
+        </div>
+
+        <div class="right-sidebar">
+            <div class="sidebar-card">
+                <h3>Jobs for you</h3>
+                <a href="jobs.html" class="jobs-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2"><path d="M17 6V5a3 3 0 00-3-3h-4a3 3 0 00-3 3v1H2v4a3 3 0 003 3h14a3 3 0 003-3V6zM9 5a1 1 0 011-1h4a1 1 0 011 1v1H9zm10 9a4 4 0 003-1.38V17a3 3 0 01-3 3H5a3 3 0 01-3-3v-4.38A4 4 0 005 14z"/></svg>
+                    Browse all jobs
+                </a>
+            </div>
+            <div class="sidebar-card">
+                <h3>Trending</h3>
+                <p style="font-size:13px;color:#666;line-height:1.5;">AI in enterprise security is the #1 trending topic this week. 12,450 posts about how companies are using LLMs for threat detection.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Composer -->
+    <div class="composer-overlay" id="composer-overlay">
+        <div class="composer-modal">
+            <div class="composer-header">
+                <h3>Create a post</h3>
+                <button class="composer-close" onclick="closeComposer()">&times;</button>
+            </div>
+            <div class="composer-body">
+                <textarea id="post-text" placeholder="What do you want to talk about?"></textarea>
+            </div>
+            <div class="composer-footer">
+                <div class="composer-tools">
+                    <button class="tool-btn" onclick="document.getElementById('post-media-input').click()" title="Add photo">
+                        <svg viewBox="0 0 24 24" fill="#666"><path d="M19 4H5a3 3 0 00-3 3v10a3 3 0 003 3h14a3 3 0 003-3V7a3 3 0 00-3-3zm1 13a1 1 0 01-.29.71L16 14l-2 2-6-6-4 4V7a1 1 0 011-1h14a1 1 0 011 1z"/></svg>
+                    </button>
+                    <input type="file" id="post-media-input" class="file-input" onchange="handlePostMedia(this)">
+                </div>
+                <button class="post-btn" onclick="submitPost()">Post</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        var mediaFile = null;
+
+        function showToast(text) {
+            var t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 2000);
+        }
+
+        function openComposer() {
+            document.getElementById('composer-overlay').classList.add('active');
+            document.getElementById('post-text').focus();
+        }
+        function closeComposer() {
+            document.getElementById('composer-overlay').classList.remove('active');
+            document.getElementById('post-text').value = '';
+            mediaFile = null;
+        }
+
+        function submitPost() {
+            var text = document.getElementById('post-text').value.trim();
+            if (!text && !mediaFile) return;
+
+            if (mediaFile) {
+                var formData = new FormData();
+                formData.append('file', mediaFile);
+                formData.append('site', 'linkedin.com');
+                formData.append('action', 'create_post');
+                formData.append('content', text);
+
+                fetch('/api/capture', { method: 'POST', body: formData })
+                .then(function(r) { return r.json(); })
+                .then(function() {
+                    showToast('Post shared');
+                    closeComposer();
+                });
+            } else {
+                fetch('/api/capture', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        site: 'linkedin.com',
+                        action: 'create_post',
+                        content: text
+                    })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function() {
+                    showToast('Post shared');
+                    closeComposer();
+                });
+            }
+        }
+
+        function handleMediaUpload(input) {
+            if (input.files && input.files[0]) {
+                mediaFile = input.files[0];
+                openComposer();
+                showToast('Media attached: ' + mediaFile.name);
+            }
+            input.value = '';
+        }
+
+        function handlePostMedia(input) {
+            if (input.files && input.files[0]) {
+                mediaFile = input.files[0];
+                showToast('Media attached: ' + mediaFile.name);
+            }
+            input.value = '';
+        }
+
+        document.getElementById('composer-overlay').addEventListener('click', function(e) {
+            if (e.target === this) closeComposer();
+        });
+    </script>
+</body>
+</html>

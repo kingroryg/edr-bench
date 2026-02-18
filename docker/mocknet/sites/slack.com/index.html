@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slack - Acme Corp Workspace</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1d21;
+            color: #d1d2d3;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Workspace sidebar (narrow) */
+        .workspace-bar {
+            width: 68px;
+            background: #1a1d21;
+            border-right: 1px solid #383838;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            flex-shrink: 0;
+        }
+        .ws-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: #4A154B;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* Channel sidebar */
+        .sidebar {
+            width: 260px;
+            background: #19171d;
+            border-right: 1px solid #383838;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #383838;
+        }
+        .sidebar-header h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            color: #ababad;
+            margin-top: 2px;
+        }
+        .sidebar-section {
+            padding: 12px 0 4px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ababad;
+        }
+        .channel-list { flex: 1; overflow-y: auto; }
+        .channel-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 16px;
+            font-size: 14px;
+            color: #ababad;
+            cursor: pointer;
+            border-radius: 6px;
+            margin: 0 8px;
+        }
+        .channel-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .channel-item.active { background: #1264a3; color: #fff; }
+        .channel-item .hash { font-weight: 400; color: #ababad; font-size: 16px; }
+        .channel-item.active .hash { color: #fff; }
+        .dm-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            background: #616061;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #007a5a;
+            display: inline-block;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        /* Main area */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1d21;
+        }
+        .channel-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #383838;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .channel-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .channel-header .topic {
+            font-size: 13px;
+            color: #ababad;
+            margin-left: 8px;
+        }
+
+        /* Messages */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+        }
+        .message {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .msg-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .msg-content { flex: 1; }
+        .msg-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+        .msg-name { font-size: 14px; font-weight: 700; color: #fff; }
+        .msg-time { font-size: 12px; color: #616061; }
+        .msg-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #d1d2d3;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Composer */
+        .composer {
+            padding: 12px 20px 20px;
+        }
+        .composer-box {
+            display: flex;
+            align-items: flex-end;
+            background: #222529;
+            border: 1px solid #565856;
+            border-radius: 8px;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+        .composer-box:focus-within { border-color: #1264a3; }
+        .attach-btn {
+            background: none;
+            border: none;
+            color: #ababad;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .attach-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        .attach-btn svg { width: 20px; height: 20px; }
+        #msg-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #d1d2d3;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            min-height: 22px;
+            max-height: 200px;
+            font-family: inherit;
+        }
+        #msg-input::placeholder { color: #616061; }
+        .send-btn {
+            width: 32px;
+            height: 32px;
+            background: #007a5a;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .send-btn:hover { background: #148567; }
+        .send-btn svg { width: 16px; height: 16px; }
+
+        .file-input { display: none; }
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #007a5a;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="workspace-bar">
+        <div class="ws-icon">AC</div>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Acme Corp</h2>
+            <p>42 members</p>
+        </div>
+        <div class="channel-list">
+            <div class="sidebar-section">Channels</div>
+            <div class="channel-item active" onclick="switchChannel('general', 'Company announcements and updates')">
+                <span class="hash">#</span> general
+            </div>
+            <div class="channel-item" onclick="switchChannel('engineering', 'Engineering team discussion')">
+                <span class="hash">#</span> engineering
+            </div>
+            <div class="channel-item" onclick="switchChannel('sales', 'Sales pipeline and deals')">
+                <span class="hash">#</span> sales
+            </div>
+            <div class="channel-item" onclick="switchChannel('random', 'Water cooler chat')">
+                <span class="hash">#</span> random
+            </div>
+            <div class="sidebar-section" style="margin-top:16px">Direct Messages</div>
+            <div class="channel-item" onclick="switchChannel('dm-sarah', '')">
+                <div class="dm-avatar">SC</div> Sarah Chen
+                <span class="online-dot"></span>
+            </div>
+            <div class="channel-item" onclick="switchChannel('dm-mike', '')">
+                <div class="dm-avatar">MT</div> Mike Torres
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="channel-header">
+            <h3 id="channel-name">#general</h3>
+            <span class="topic" id="channel-topic">Company announcements and updates</span>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="message">
+                <div class="msg-avatar" style="background:#e8912d">SC</div>
+                <div class="msg-content">
+                    <div class="msg-header">
+                        <span class="msg-name">Sarah Chen</span>
+                        <span class="msg-time">10:32 AM</span>
+                    </div>
+                    <div class="msg-text">Hey everyone, reminder that the Q1 all-hands is this Thursday at 2pm. Please review the deck I shared in Drive beforehand.</div>
+                </div>
+            </div>
+            <div class="message">
+                <div class="msg-avatar" style="background:#4A154B">MT</div>
+                <div class="msg-content">
+                    <div class="msg-header">
+                        <span class="msg-name">Mike Torres</span>
+                        <span class="msg-time">10:45 AM</span>
+                    </div>
+                    <div class="msg-text">Thanks Sarah! Will the recording be available for folks in different time zones?</div>
+                </div>
+            </div>
+            <div class="message">
+                <div class="msg-avatar" style="background:#2bac76">JR</div>
+                <div class="msg-content">
+                    <div class="msg-header">
+                        <span class="msg-name">Jessica Rodriguez</span>
+                        <span class="msg-time">11:02 AM</span>
+                    </div>
+                    <div class="msg-text">Just pushed the new auth module to staging. Can someone from security review the PR? It touches the SSO integration.</div>
+                </div>
+            </div>
+            <div class="message">
+                <div class="msg-avatar" style="background:#e8912d">SC</div>
+                <div class="msg-content">
+                    <div class="msg-header">
+                        <span class="msg-name">Sarah Chen</span>
+                        <span class="msg-time">11:15 AM</span>
+                    </div>
+                    <div class="msg-text">@Mike yes, it will be recorded and posted in #general afterward. @Jessica I'll review the PR this afternoon.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="composer">
+            <div class="composer-box">
+                <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Attach file">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                </button>
+                <input type="file" id="file-input" class="file-input" onchange="handleFileAttach(this)">
+                <textarea id="msg-input" rows="1" placeholder="Message #general" onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" onclick="sendMessage()" title="Send">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        var currentChannel = 'general';
+        var msgInput = document.getElementById('msg-input');
+        var messagesEl = document.getElementById('messages');
+        var avatarColors = ['#e8912d', '#4A154B', '#2bac76', '#36c5f0', '#e01e5a'];
+
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function showToast(text) {
+            var t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 2000);
+        }
+
+        function switchChannel(channel, topic) {
+            currentChannel = channel;
+            var items = document.querySelectorAll('.channel-item');
+            items.forEach(function(item) { item.classList.remove('active'); });
+            event.currentTarget.classList.add('active');
+
+            var displayName = channel.startsWith('dm-') ? channel.replace('dm-', '@') : '#' + channel;
+            document.getElementById('channel-name').textContent = displayName;
+            document.getElementById('channel-topic').textContent = topic;
+            msgInput.placeholder = 'Message ' + displayName;
+        }
+
+        function addMessageBubble(name, text) {
+            var initials = name.split(' ').map(function(w){ return w[0]; }).join('');
+            var color = avatarColors[Math.floor(Math.random() * avatarColors.length)];
+            var now = new Date();
+            var timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+            var msg = document.createElement('div');
+            msg.className = 'message';
+            msg.innerHTML = '<div class="msg-avatar" style="background:' + color + '">' + initials + '</div>' +
+                '<div class="msg-content">' +
+                    '<div class="msg-header"><span class="msg-name">' + name + '</span><span class="msg-time">' + timeStr + '</span></div>' +
+                    '<div class="msg-text"></div>' +
+                '</div>';
+            msg.querySelector('.msg-text').textContent = text;
+            messagesEl.appendChild(msg);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function sendMessage() {
+            var text = msgInput.value.trim();
+            if (!text) return;
+
+            addMessageBubble('You', text);
+            msgInput.value = '';
+            msgInput.style.height = 'auto';
+
+            fetch('/api/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    site: 'slack.com',
+                    action: 'send_message',
+                    channel: currentChannel,
+                    content: text
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() { showToast('Sent'); })
+            .catch(function(err) { console.error('Send failed:', err); });
+        }
+
+        function handleFileAttach(input) {
+            if (!input.files || !input.files[0]) return;
+            var file = input.files[0];
+
+            var formData = new FormData();
+            formData.append('file', file);
+            formData.append('site', 'slack.com');
+            formData.append('action', 'send_message');
+            formData.append('channel', currentChannel);
+            formData.append('content', '[File: ' + file.name + ']');
+
+            addMessageBubble('You', '[Shared file: ' + file.name + ']');
+
+            fetch('/api/send', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() { showToast('File shared'); })
+            .catch(function(err) { console.error('Upload failed:', err); });
+
+            input.value = '';
+        }
+    </script>
+</body>
+</html>

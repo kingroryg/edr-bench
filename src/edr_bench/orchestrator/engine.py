@@ -12,7 +12,10 @@ import structlog
 from edr_bench.config.settings import Settings
 from edr_bench.executors.base import AttackExecutor
 from edr_bench.executors.cli_executor import CLIExecutor
+from edr_bench.executors.phishing_executor import PhishingExecutor
+from edr_bench.executors.terraform_executor import TerraformExecutor
 from edr_bench.executors.ui_executor import UIExecutor
+from edr_bench.executors.usb_simulator import USBSimulatorExecutor
 from edr_bench.ground_truth.collector import GroundTruthCollector
 from edr_bench.models.enums import Platform, Role
 from edr_bench.models.ground_truth import GroundTruthEvent
@@ -37,6 +40,9 @@ class BenchmarkOrchestrator:
         self.ground_truth_collector = GroundTruthCollector(settings)
         self._cli_executor: CLIExecutor | None = None
         self._ui_executor: UIExecutor | None = None
+        self._phishing_executor: PhishingExecutor | None = None
+        self._terraform_executor: TerraformExecutor | None = None
+        self._usb_executor: USBSimulatorExecutor | None = None
 
     async def run_benchmark(
         self,
@@ -152,7 +158,12 @@ class BenchmarkOrchestrator:
         return result
 
     def _get_executor(self, step: SimulationStep) -> AttackExecutor:
-        """Get the appropriate executor for a simulation step."""
+        """Get the appropriate executor for a simulation step.
+
+        Each role maps to a dedicated executor that knows how to drive
+        that particular attack surface (shell commands, browser automation,
+        phishing campaigns, cloud provisioning, or USB device simulation).
+        """
         if step.role == Role.CLI:
             if not self._cli_executor:
                 self._cli_executor = CLIExecutor(self.settings)
@@ -161,10 +172,19 @@ class BenchmarkOrchestrator:
             if not self._ui_executor:
                 self._ui_executor = UIExecutor(self.settings)
             return self._ui_executor
-        # Fallback to CLI executor for other roles
-        if not self._cli_executor:
-            self._cli_executor = CLIExecutor(self.settings)
-        return self._cli_executor
+        if step.role == Role.PHISHING:
+            if not self._phishing_executor:
+                self._phishing_executor = PhishingExecutor(self.settings)
+            return self._phishing_executor
+        if step.role == Role.CLOUD:
+            if not self._terraform_executor:
+                self._terraform_executor = TerraformExecutor(self.settings)
+            return self._terraform_executor
+        if step.role == Role.USB:
+            if not self._usb_executor:
+                self._usb_executor = USBSimulatorExecutor(self.settings)
+            return self._usb_executor
+        raise ValueError(f"No executor registered for role: {step.role!r}")
 
     def _build_report(self, run_id: str, results: list[ScenarioResult]) -> BenchmarkReport:
         """Aggregate scenario results into a benchmark report."""

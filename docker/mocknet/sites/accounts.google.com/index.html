@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - Google Accounts</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Google Sans', Roboto, -apple-system, sans-serif;
+            background: #f8f9fa;
+            color: #202124;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .consent-card {
+            background: #fff;
+            border-radius: 8px;
+            width: 440px;
+            padding: 40px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        /* Google Logo */
+        .google-logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .google-logo svg { width: 75px; height: 24px; }
+
+        /* Header */
+        .consent-title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 400;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+        .app-name {
+            font-weight: 500;
+        }
+
+        /* User info */
+        .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 16px 0 24px;
+            padding: 8px 16px;
+            background: #f1f3f4;
+            border-radius: 16px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+        .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #1a73e8;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* App info */
+        .app-info {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .app-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+            margin: 0 auto 12px;
+        }
+        .app-subtitle {
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        /* Scopes */
+        .scopes-section {
+            margin-bottom: 24px;
+        }
+        .scopes-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #202124;
+        }
+        .scope-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        .scope-item:last-child { border-bottom: none; }
+        .scope-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .scope-icon.drive { background: #e8f5e9; color: #0f9d58; font-size: 16px; }
+        .scope-icon.gmail { background: #fce8e6; color: #ea4335; font-size: 16px; }
+        .scope-icon.calendar { background: #e8f0fe; color: #1a73e8; font-size: 16px; }
+        .scope-info { flex: 1; }
+        .scope-name { font-size: 14px; font-weight: 500; }
+        .scope-desc { font-size: 13px; color: #5f6368; margin-top: 2px; }
+
+        /* Warning */
+        .warning-box {
+            background: #fef7e0;
+            border: 1px solid #feefc3;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .warning-icon { font-size: 18px; color: #e37400; flex-shrink: 0; }
+        .warning-text { font-size: 13px; color: #5f6368; line-height: 1.4; }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .cancel-btn {
+            padding: 10px 24px;
+            background: #fff;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a73e8;
+            cursor: pointer;
+        }
+        .cancel-btn:hover { background: #f6fafe; }
+        .allow-btn {
+            padding: 10px 24px;
+            background: #1a73e8;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #fff;
+            cursor: pointer;
+        }
+        .allow-btn:hover { background: #1765cc; }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show { opacity: 1; }
+
+        .footer {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 12px;
+            color: #5f6368;
+        }
+        .footer a { color: #1a73e8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="consent-card">
+            <!-- Google Logo -->
+            <div class="google-logo">
+                <svg viewBox="0 0 272 92" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M115.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18C71.25 34.32 81.24 25 93.5 25s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44S80.99 39.2 80.99 47.18c0 7.9 5.79 13.44 12.51 13.44s12.51-5.54 12.51-13.44z" fill="#EA4335"/>
+                    <path d="M163.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18c0-12.86 9.99-22.18 22.25-22.18s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44s-12.51 5.46-12.51 13.44c0 7.9 5.79 13.44 12.51 13.44s12.51-5.54 12.51-13.44z" fill="#FBBC05"/>
+                    <path d="M209.75 26.34v39.82c0 16.38-9.66 23.07-21.08 23.07-10.75 0-17.22-7.19-19.66-13.07l8.48-3.53c1.51 3.61 5.21 7.87 11.17 7.87 7.31 0 11.84-4.51 11.84-13v-3.19h-.34c-2.18 2.69-6.38 5.04-11.68 5.04-11.09 0-21.25-9.66-21.25-22.09 0-12.52 10.16-22.26 21.25-22.26 5.29 0 9.49 2.35 11.68 4.96h.34v-3.61h9.25zm-8.56 20.92c0-7.81-5.21-13.52-11.84-13.52-6.72 0-12.35 5.71-12.35 13.52 0 7.73 5.63 13.36 12.35 13.36 6.63 0 11.84-5.63 11.84-13.36z" fill="#4285F4"/>
+                    <path d="M225 3v65h-9.5V3h9.5z" fill="#34A853"/>
+                    <path d="M262.02 54.48l7.56 5.04c-2.44 3.61-8.32 9.83-18.48 9.83-12.6 0-22.01-9.74-22.01-22.18 0-13.19 9.49-22.18 20.92-22.18 11.51 0 17.14 9.16 18.98 14.11l1.01 2.52-29.65 12.28c2.27 4.45 5.8 6.72 10.75 6.72 4.96 0 8.4-2.44 10.92-6.14zm-23.27-7.98l19.82-8.23c-1.09-2.77-4.37-4.7-8.23-4.7-4.95 0-11.84 4.37-11.59 12.93z" fill="#EA4335"/>
+                    <path d="M35.29 41.19V32H67c.31 1.64.47 3.58.47 5.68 0 7.06-1.93 15.79-8.15 22.01-6.05 6.3-13.78 9.66-24.02 9.66C16.32 69.35.36 53.89.36 34.91.36 15.93 16.32.47 35.3.47c10.5 0 17.98 4.12 23.6 9.49l-6.64 6.64c-4.03-3.78-9.49-6.72-16.97-6.72-13.86 0-24.7 11.17-24.7 25.03 0 13.86 10.84 25.03 24.7 25.03 8.99 0 14.11-3.61 17.39-6.89 2.66-2.66 4.41-6.46 5.1-11.65l-22.49-.01z" fill="#4285F4"/>
+                </svg>
+            </div>
+
+            <h2 class="consent-title"><span class="app-name">ShadowApp</span> wants to access your Google Account</h2>
+
+            <div class="user-info">
+                <div class="user-avatar">U</div>
+                user@company.com
+            </div>
+
+            <div class="scopes-section">
+                <div class="scopes-label">This will allow ShadowApp to:</div>
+
+                <div class="scope-item">
+                    <div class="scope-icon drive">&#128193;</div>
+                    <div class="scope-info">
+                        <div class="scope-name">Google Drive</div>
+                        <div class="scope-desc">See, edit, create, and delete all of your Google Drive files</div>
+                    </div>
+                </div>
+
+                <div class="scope-item">
+                    <div class="scope-icon gmail">&#9993;</div>
+                    <div class="scope-info">
+                        <div class="scope-name">Gmail</div>
+                        <div class="scope-desc">Read, compose, send, and permanently delete all your email from Gmail</div>
+                    </div>
+                </div>
+
+                <div class="scope-item">
+                    <div class="scope-icon calendar">&#128197;</div>
+                    <div class="scope-info">
+                        <div class="scope-name">Google Calendar</div>
+                        <div class="scope-desc">See and edit events on all your calendars</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <span class="warning-icon">&#9888;</span>
+                <span class="warning-text">
+                    Make sure you trust <strong>ShadowApp</strong>. This third-party app is not verified by Google. Granting access will allow it to read and modify your data.
+                </span>
+            </div>
+
+            <div class="btn-row">
+                <button class="cancel-btn" onclick="cancelAuth()">Cancel</button>
+                <button class="allow-btn" onclick="grantAuth()">Allow</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>See <a href="#">ShadowApp's privacy policy</a> and <a href="#">terms of service</a></p>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function showToast(text) {
+            var t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 2500);
+        }
+
+        function grantAuth() {
+            fetch('/api/oauth/authorize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    site: 'accounts.google.com',
+                    action: 'oauth_grant',
+                    app: 'ShadowApp',
+                    scopes: ['drive', 'gmail', 'calendar'],
+                    user: 'user@company.com'
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() {
+                showToast('Access granted to ShadowApp');
+            });
+        }
+
+        function cancelAuth() {
+            showToast('Authorization cancelled');
+        }
+    </script>
+</body>
+</html>

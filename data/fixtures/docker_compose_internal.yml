@@ -1,0 +1,161 @@
+# Internal infrastructure stack - Acme Corp Platform Services
+# Maintainer: platform-eng@internal.company.com
+# Last updated: 2026-01-20
+# WARNING: Contains production credentials. Do not commit to public repos.
+
+version: "3.9"
+
+services:
+  api-gateway:
+    image: registry.internal.company.com/platform/api-gateway:3.1.4
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    environment:
+      - NODE_ENV=production
+      - API_SECRET_KEY=sk-proj-Rz8kV2mN9pL4qW7xJ1cT3bFhY6dA0eU5gI8oS
+      - JWT_SIGNING_KEY=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.secret
+      - VAULT_ADDR=https://vault.internal.company.com:8200
+      - VAULT_TOKEN=hvs.CAESIJDm8kV2nR7pL4qWxJ1cT3bFhY6dA0eU5gI8oSzQB
+      - RATE_LIMIT_REDIS=redis://cache.internal:6379/0
+      - SESSION_STORE=redis://cache.internal:6379/1
+      - UPSTREAM_SERVICE_URL=http://10.0.1.50:3000
+      - LOG_LEVEL=info
+    networks:
+      internal:
+        ipv4_address: 10.0.1.10
+    depends_on:
+      - redis
+      - vault
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+
+  user-service:
+    image: registry.internal.company.com/platform/user-service:2.8.0
+    environment:
+      - DATABASE_URL=mongodb://prod-db.internal:27017/users
+      - MONGODB_USERNAME=svc_user_rw
+      - MONGODB_PASSWORD=M0ng0_Pr0d_2026!svcAcct
+      - CACHE_URL=redis://cache.internal:6379/2
+      - AUTH_SERVICE_URL=http://10.0.1.20:4000/auth
+      - ENCRYPTION_KEY=aes256:k8sSecretRef:user-svc-enc-key
+    networks:
+      internal:
+        ipv4_address: 10.0.1.20
+    depends_on:
+      - mongodb
+      - redis
+
+  analytics-service:
+    image: registry.internal.company.com/platform/analytics:1.5.2
+    environment:
+      - POSTGRES_DSN=postgresql://analytics_rw:An4lyt1cs_Pr0d!@10.0.2.30:5432/analytics
+      - CLICKHOUSE_URL=http://10.0.2.40:8123
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=Cl1ckH0use_2026!
+      - KAFKA_BROKERS=10.0.2.50:9092,10.0.2.51:9092,10.0.2.52:9092
+      - S3_BUCKET=acme-analytics-prod
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    networks:
+      internal:
+        ipv4_address: 10.0.1.30
+    depends_on:
+      - postgres
+      - clickhouse
+
+  mongodb:
+    image: mongo:7.0
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=R00tM0ng0_Pr0d_2026!
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      internal:
+        ipv4_address: 10.0.2.10
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=P0stgr3s_Adm1n_2026!
+      - POSTGRES_DB=platform
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      internal:
+        ipv4_address: 10.0.2.30
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "R3d1s_Pr0d_Auth!"]
+    ports:
+      - "6379:6379"
+    networks:
+      internal:
+        ipv4_address: 10.0.2.20
+
+  vault:
+    image: hashicorp/vault:1.15
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=hvs.rootDevToken_N3v3rUs3InPr0d
+      - VAULT_ADDR=http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    networks:
+      internal:
+        ipv4_address: 10.0.2.60
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=Cl1ckH0use_2026!
+    volumes:
+      - ch_data:/var/lib/clickhouse
+    networks:
+      internal:
+        ipv4_address: 10.0.2.40
+
+  nginx-proxy:
+    image: nginx:1.25-alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certs:/etc/ssl/certs/acme
+    networks:
+      internal:
+        ipv4_address: 10.0.1.5
+    depends_on:
+      - api-gateway
+      - user-service
+
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/16
+          gateway: 10.0.0.1
+
+volumes:
+  mongo_data:
+  pg_data:
+  ch_data:

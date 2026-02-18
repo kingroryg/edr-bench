@@ -1,0 +1,204 @@
+{
+  "review_id": "AR-2026-Q1-0042",
+  "review_date": "2026-02-15",
+  "employee": {
+    "id": "EMP-10847",
+    "name": "Jordan Mitchell",
+    "email": "jordan.mitchell@acmecorp.com",
+    "department": "Engineering",
+    "title": "Senior Software Engineer",
+    "manager": "Sarah Chen",
+    "hire_date": "2022-06-15",
+    "location": "San Francisco, CA"
+  },
+  "reviewer": {
+    "id": "EMP-10201",
+    "name": "Sarah Chen",
+    "email": "sarah.chen@acmecorp.com",
+    "title": "Staff Engineer"
+  },
+  "review_period": {
+    "start": "2025-11-01",
+    "end": "2026-01-31"
+  },
+  "systems": [
+    {
+      "system_name": "GitHub Enterprise",
+      "system_id": "SYS-001",
+      "access_level": "write",
+      "last_access": "2026-02-14",
+      "days_since_last_access": 1,
+      "peer_usage_pct": 95.2,
+      "risk_level": "low",
+      "recommendation": "maintain",
+      "justification": "Active daily use for code reviews and pull requests"
+    },
+    {
+      "system_name": "AWS Console (Production)",
+      "system_id": "SYS-002",
+      "access_level": "admin",
+      "last_access": "2026-02-13",
+      "days_since_last_access": 2,
+      "peer_usage_pct": 78.4,
+      "risk_level": "medium",
+      "recommendation": "downgrade",
+      "justification": "Admin access not required; read-only sufficient for monitoring duties"
+    },
+    {
+      "system_name": "Jira",
+      "system_id": "SYS-003",
+      "access_level": "write",
+      "last_access": "2026-02-14",
+      "days_since_last_access": 1,
+      "peer_usage_pct": 91.0,
+      "risk_level": "low",
+      "recommendation": "maintain",
+      "justification": "Daily use for sprint planning and ticket management"
+    },
+    {
+      "system_name": "Salesforce CRM",
+      "system_id": "SYS-004",
+      "access_level": "read",
+      "last_access": "2025-09-20",
+      "days_since_last_access": 148,
+      "peer_usage_pct": 8.3,
+      "risk_level": "high",
+      "recommendation": "revoke",
+      "justification": "Engineering role does not require CRM access; granted during cross-team project that ended Q3 2025"
+    },
+    {
+      "system_name": "Snowflake Data Warehouse",
+      "system_id": "SYS-005",
+      "access_level": "write",
+      "last_access": "2025-08-15",
+      "days_since_last_access": 184,
+      "peer_usage_pct": 12.1,
+      "risk_level": "high",
+      "recommendation": "revoke",
+      "justification": "Write access was for a one-time data migration; task completed August 2025"
+    },
+    {
+      "system_name": "Datadog",
+      "system_id": "SYS-006",
+      "access_level": "write",
+      "last_access": "2026-02-10",
+      "days_since_last_access": 5,
+      "peer_usage_pct": 82.7,
+      "risk_level": "low",
+      "recommendation": "maintain",
+      "justification": "Regular use for monitoring and alerting configuration"
+    },
+    {
+      "system_name": "Confluence Wiki",
+      "system_id": "SYS-007",
+      "access_level": "write",
+      "last_access": "2026-01-28",
+      "days_since_last_access": 18,
+      "peer_usage_pct": 67.5,
+      "risk_level": "low",
+      "recommendation": "maintain",
+      "justification": "Used for documentation; access pattern is normal for engineering staff"
+    },
+    {
+      "system_name": "PagerDuty",
+      "system_id": "SYS-008",
+      "access_level": "admin",
+      "last_access": "2025-10-05",
+      "days_since_last_access": 133,
+      "peer_usage_pct": 15.2,
+      "risk_level": "high",
+      "recommendation": "downgrade",
+      "justification": "Admin access was for on-call rotation setup; standard responder access is sufficient now"
+    },
+    {
+      "system_name": "Okta Admin Portal",
+      "system_id": "SYS-009",
+      "access_level": "admin",
+      "last_access": "2025-07-22",
+      "days_since_last_access": 207,
+      "peer_usage_pct": 3.1,
+      "risk_level": "critical",
+      "recommendation": "revoke",
+      "justification": "Admin access to identity provider is inappropriate for engineering role; was granted in error"
+    },
+    {
+      "system_name": "Slack",
+      "system_id": "SYS-010",
+      "access_level": "member",
+      "last_access": "2026-02-14",
+      "days_since_last_access": 1,
+      "peer_usage_pct": 99.1,
+      "risk_level": "low",
+      "recommendation": "maintain",
+      "justification": "Standard communication tool used by all employees"
+    },
+    {
+      "system_name": "Terraform Cloud",
+      "system_id": "SYS-011",
+      "access_level": "write",
+      "last_access": "2025-06-30",
+      "days_since_last_access": 229,
+      "peer_usage_pct": 22.0,
+      "risk_level": "high",
+      "recommendation": "revoke",
+      "justification": "Infrastructure provisioning access not needed; employee moved to application development team in July 2025"
+    },
+    {
+      "system_name": "Vault (Secrets Manager)",
+      "system_id": "SYS-012",
+      "access_level": "read",
+      "last_access": "2025-11-10",
+      "days_since_last_access": 97,
+      "peer_usage_pct": 45.8,
+      "risk_level": "medium",
+      "recommendation": "review",
+      "justification": "Read access may still be needed for application secrets; verify with team lead"
+    },
+    {
+      "system_name": "Zendesk (Support Portal)",
+      "system_id": "SYS-013",
+      "access_level": "agent",
+      "last_access": "2025-08-01",
+      "days_since_last_access": 198,
+      "peer_usage_pct": 5.6,
+      "risk_level": "high",
+      "recommendation": "revoke",
+      "justification": "Agent access was temporary for customer escalation handling during incident response"
+    },
+    {
+      "system_name": "Google Workspace",
+      "system_id": "SYS-014",
+      "access_level": "standard",
+      "last_access": "2026-02-14",
+      "days_since_last_access": 1,
+      "peer_usage_pct": 98.5,
+      "risk_level": "low",
+      "recommendation": "maintain",
+      "justification": "Standard productivity suite used daily"
+    },
+    {
+      "system_name": "CircleCI",
+      "system_id": "SYS-015",
+      "access_level": "write",
+      "last_access": "2025-09-15",
+      "days_since_last_access": 153,
+      "peer_usage_pct": 18.9,
+      "risk_level": "high",
+      "recommendation": "revoke",
+      "justification": "CI/CD pipeline management moved to GitHub Actions; CircleCI access is orphaned"
+    }
+  ],
+  "summary": {
+    "total_systems": 15,
+    "systems_to_maintain": 7,
+    "systems_to_revoke": 6,
+    "systems_to_downgrade": 2,
+    "systems_unused_over_90_days": 8,
+    "systems_actively_used": 7,
+    "high_risk_count": 5,
+    "critical_risk_count": 1,
+    "estimated_risk_reduction": "67% reduction in attack surface by removing unused access"
+  },
+  "review_status": "pending_manager_approval",
+  "notes": "Employee has accumulated access from multiple cross-team projects. Recommend quarterly access reviews going forward to prevent access sprawl."
+}

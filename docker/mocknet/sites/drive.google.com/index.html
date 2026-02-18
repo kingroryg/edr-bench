@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Drive - Google Drive</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Google Sans', Roboto, -apple-system, sans-serif;
+            background: #f8f9fa;
+            color: #202124;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: #fff;
+            border-bottom: 1px solid #dadce0;
+            height: 64px;
+        }
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 22px;
+            color: #5f6368;
+            min-width: 240px;
+        }
+        .header-logo svg { width: 40px; height: 40px; }
+        .header-logo span { font-weight: 400; }
+        .search-bar {
+            flex: 1;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px 16px;
+            background: #f1f3f4;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+        .search-bar input:focus { background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+        .user-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #1a73e8;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+            margin-left: 16px;
+        }
+
+        /* Layout */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 240px;
+            padding: 8px 0;
+            background: #fff;
+            border-right: 1px solid #dadce0;
+            flex-shrink: 0;
+        }
+        .new-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 12px 16px;
+            padding: 12px 24px;
+            background: #fff;
+            border: 1px solid #dadce0;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #202124;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: box-shadow 0.2s;
+        }
+        .new-btn:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .new-btn svg { width: 24px; height: 24px; }
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 24px;
+            font-size: 13px;
+            color: #5f6368;
+            cursor: pointer;
+            border-radius: 0 20px 20px 0;
+            margin-right: 12px;
+        }
+        .sidebar-item:hover { background: #f1f3f4; }
+        .sidebar-item.active { background: #e8f0fe; color: #1a73e8; font-weight: 500; }
+
+        /* Content */
+        .content {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+        .content h2 {
+            font-size: 18px;
+            font-weight: 400;
+            margin-bottom: 16px;
+            color: #202124;
+        }
+
+        /* File list */
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .file-table th {
+            text-align: left;
+            font-size: 12px;
+            font-weight: 500;
+            color: #5f6368;
+            padding: 8px 12px;
+            border-bottom: 1px solid #dadce0;
+        }
+        .file-table td {
+            padding: 10px 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        .file-row:hover { background: #f8f9fa; }
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .file-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .icon-xlsx { background: #0f9d58; }
+        .icon-csv { background: #4285f4; }
+        .icon-docx { background: #4285f4; }
+        .share-btn {
+            padding: 6px 16px;
+            background: #fff;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1a73e8;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .share-btn:hover { background: #f1f3f4; }
+
+        /* Share Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: 12px;
+            width: 480px;
+            max-width: 90%;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 12px;
+        }
+        .modal-header h3 { font-size: 18px; font-weight: 500; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #5f6368;
+            padding: 4px;
+        }
+        .modal-body { padding: 8px 24px 16px; }
+        .modal-body label {
+            display: block;
+            font-size: 12px;
+            color: #5f6368;
+            margin-bottom: 4px;
+            margin-top: 12px;
+        }
+        .modal-body input[type="email"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+        .modal-body input[type="email"]:focus { border-color: #1a73e8; }
+        .modal-body select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            background: #fff;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px 20px;
+        }
+        .copy-link-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            color: #1a73e8;
+            font-weight: 500;
+        }
+        .copy-link-btn:hover { background: #f1f3f4; }
+        .done-btn {
+            padding: 8px 24px;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .done-btn:hover { background: #1765cc; }
+
+        /* Upload modal */
+        .upload-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .upload-overlay.active { display: flex; }
+        .upload-modal {
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px;
+            width: 440px;
+            text-align: center;
+        }
+        .upload-zone {
+            border: 2px dashed #dadce0;
+            border-radius: 12px;
+            padding: 48px 24px;
+            margin: 16px 0;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .upload-zone.dragover {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+        .upload-zone p { color: #5f6368; font-size: 14px; margin-top: 8px; }
+        .upload-zone .upload-icon { font-size: 40px; color: #1a73e8; }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 2000;
+        }
+        .toast.show { opacity: 1; }
+        .file-input-hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-logo">
+            <svg viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.4 11.35z" fill="#ea4335"/>
+                <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                <path d="m73.4 26.5-10.2-17.65c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.8h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+            </svg>
+            <span>Drive</span>
+        </div>
+        <div class="search-bar">
+            <input type="text" placeholder="Search in Drive">
+        </div>
+        <div class="user-icon">U</div>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <button class="new-btn" onclick="openUploadModal()">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 5v14M5 12h14" stroke="#202124" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                New
+            </button>
+            <div class="sidebar-item active">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1a73e8"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+                My Drive
+            </div>
+            <div class="sidebar-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#5f6368"><path d="M16 11V3H8v6H2v12h20V11h-6zM10 5h4v14h-4V5zM4 11h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>
+                Shared with me
+            </div>
+            <div class="sidebar-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#5f6368"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93z"/></svg>
+                Recent
+            </div>
+            <div class="sidebar-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#5f6368"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg>
+                Trash
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>My Drive</h2>
+            <table class="file-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Owner</th>
+                        <th>Last modified</th>
+                        <th>File size</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="file-row">
+                        <td>
+                            <div class="file-name">
+                                <div class="file-icon icon-xlsx">XL</div>
+                                Q3 Revenue Report.xlsx
+                            </div>
+                        </td>
+                        <td>me</td>
+                        <td>Feb 15, 2026</td>
+                        <td>2.4 MB</td>
+                        <td><button class="share-btn" onclick="openShareModal('Q3 Revenue Report.xlsx')">Share</button></td>
+                    </tr>
+                    <tr class="file-row">
+                        <td>
+                            <div class="file-name">
+                                <div class="file-icon icon-csv">CSV</div>
+                                Customer Database.csv
+                            </div>
+                        </td>
+                        <td>me</td>
+                        <td>Feb 12, 2026</td>
+                        <td>18.7 MB</td>
+                        <td><button class="share-btn" onclick="openShareModal('Customer Database.csv')">Share</button></td>
+                    </tr>
+                    <tr class="file-row">
+                        <td>
+                            <div class="file-name">
+                                <div class="file-icon icon-docx">W</div>
+                                Team Meeting Notes.docx
+                            </div>
+                        </td>
+                        <td>me</td>
+                        <td>Feb 10, 2026</td>
+                        <td>156 KB</td>
+                        <td><button class="share-btn" onclick="openShareModal('Team Meeting Notes.docx')">Share</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal-overlay" id="share-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Share "<span id="share-filename"></span>"</h3>
+                <button class="modal-close" onclick="closeShareModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="share-email">Add people</label>
+                <input type="email" id="share-email" placeholder="Enter email address">
+                <label for="access-level">General access</label>
+                <select id="access-level">
+                    <option value="restricted">Restricted</option>
+                    <option value="anyone_with_link">Anyone with the link</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="copy-link-btn" onclick="copyLink()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                    Copy link
+                </button>
+                <button class="done-btn" onclick="submitShare()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="upload-overlay" id="upload-modal">
+        <div class="upload-modal">
+            <h3>Upload files</h3>
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('upload-input').click()"
+                 ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                <div class="upload-icon">&#8682;</div>
+                <p>Drag files here or click to browse</p>
+            </div>
+            <input type="file" id="upload-input" class="file-input-hidden" onchange="handleUpload(this)">
+            <button class="modal-close" onclick="closeUploadModal()" style="margin-top:12px;background:none;border:1px solid #dadce0;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:14px;">Cancel</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        var currentFile = '';
+
+        function showToast(text) {
+            var t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 2000);
+        }
+
+        /* Share modal */
+        function openShareModal(filename) {
+            currentFile = filename;
+            document.getElementById('share-filename').textContent = filename;
+            document.getElementById('share-email').value = '';
+            document.getElementById('access-level').value = 'restricted';
+            document.getElementById('share-modal').classList.add('active');
+        }
+        function closeShareModal() {
+            document.getElementById('share-modal').classList.remove('active');
+        }
+        function copyLink() {
+            var level = document.getElementById('access-level').value;
+            fetch('/api/share', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    site: 'drive.google.com',
+                    action: 'share_link',
+                    filename: currentFile,
+                    recipient: '',
+                    access_level: level
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() { showToast('Link copied'); });
+        }
+        function submitShare() {
+            var email = document.getElementById('share-email').value.trim();
+            var level = document.getElementById('access-level').value;
+            fetch('/api/share', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    site: 'drive.google.com',
+                    action: 'share_link',
+                    filename: currentFile,
+                    recipient: email,
+                    access_level: level
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() {
+                showToast('Shared');
+                closeShareModal();
+            });
+        }
+
+        /* Upload modal */
+        function openUploadModal() {
+            document.getElementById('upload-modal').classList.add('active');
+        }
+        function closeUploadModal() {
+            document.getElementById('upload-modal').classList.remove('active');
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                uploadFile(e.dataTransfer.files[0]);
+            }
+        }
+        function handleUpload(input) {
+            if (input.files && input.files[0]) {
+                uploadFile(input.files[0]);
+                input.value = '';
+            }
+        }
+        function uploadFile(file) {
+            var formData = new FormData();
+            formData.append('file', file);
+            formData.append('site', 'drive.google.com');
+            formData.append('action', 'upload_file');
+            fetch('/api/capture', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() {
+                showToast('File uploaded');
+                closeUploadModal();
+            });
+        }
+
+        // Close modals on overlay click
+        document.getElementById('share-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeShareModal();
+        });
+        document.getElementById('upload-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeUploadModal();
+        });
+    </script>
+</body>
+</html>

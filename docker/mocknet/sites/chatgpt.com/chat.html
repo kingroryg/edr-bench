@@ -307,7 +307,6 @@
             .then(function(r) { return r.json(); })
             .then(function() {
                 showToast('Sent');
-                // Fake assistant reply after a beat
                 setTimeout(function() {
                     addMessage('assistant', 'I received your message. How else can I help?');
                 }, 600);

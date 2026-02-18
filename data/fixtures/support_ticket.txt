@@ -1,0 +1,112 @@
+================================================================================
+                      CUSTOMER SUPPORT TICKET
+================================================================================
+
+Ticket ID:          #12345
+Priority:           High
+Status:             Open - Escalated to Engineering
+Created:            2026-02-10 14:32:07 UTC
+Last Updated:       2026-02-11 09:15:22 UTC
+Assigned To:        Level 2 Support - Engineering Escalation Queue
+SLA Due:            2026-02-12 14:32:07 UTC
+
+--------------------------------------------------------------------------------
+CUSTOMER INFORMATION
+--------------------------------------------------------------------------------
+
+Customer Name:      John Martinez
+Email:              john.martinez@customer.com
+Phone:              (555) 123-4567
+Account ID:         #ACC-98765
+Account Tier:       Enterprise
+Company:            Westfield Industries
+Last 4 of CC:       4532
+Billing Address:    8400 Corporate Plaza, Suite 200, Houston, TX 77001
+
+--------------------------------------------------------------------------------
+ISSUE DESCRIPTION
+--------------------------------------------------------------------------------
+
+Subject: Platform dashboard fails to load after SSO authentication
+
+Customer reports that after successfully authenticating through Okta SSO,
+the main dashboard page shows a blank white screen. The browser console
+shows a JavaScript error. This started occurring after our platform update
+on 2026-02-09.
+
+Customer has 340 users affected. This is blocking their daily operations
+as the dashboard is their primary interface for order management.
+
+--------------------------------------------------------------------------------
+ENVIRONMENT DETAILS
+--------------------------------------------------------------------------------
+
+Product:            Acme Platform v4.2.1 (build 4.2.1-rc3+20260209.sha.a3b8c1f)
+Browser:            Chrome 122.0.6261.112 (also reproduced in Firefox 124.0)
+OS:                 Windows 11 Enterprise 23H2
+SSO Provider:       Okta (SAML 2.0 integration)
+Network:            Corporate network, behind Zscaler proxy
+
+--------------------------------------------------------------------------------
+TECHNICAL DETAILS - ERROR STACK TRACE
+--------------------------------------------------------------------------------
+
+The following error appears in the browser developer console:
+
+    Uncaught TypeError: Cannot read properties of undefined (reading 'userPreferences')
+        at DashboardController.initialize (dashboard-controller.js:142:28)
+        at async AppBootstrap.loadModules (app-bootstrap.js:87:9)
+        at async AppBootstrap.start (app-bootstrap.js:34:5)
+        at async main (index.js:12:3)
+
+    Failed to fetch resource: https://api.acmeplatform.com/v4/users/me/preferences
+    Status: 502 Bad Gateway
+    X-Request-ID: req_7f8a9b2c3d4e5f6a
+    X-Correlation-ID: corr_1a2b3c4d5e6f7890
+
+Network waterfall shows the /users/me/preferences endpoint returning 502
+after a 30-second timeout. All other API calls succeed normally.
+
+API Gateway logs (from customer-shared screenshot):
+    2026-02-10T14:31:52Z  WARN  upstream_timeout  service=user-preferences
+    latency=30002ms  status=502  path=/v4/users/me/preferences
+
+--------------------------------------------------------------------------------
+TROUBLESHOOTING STEPS TAKEN
+--------------------------------------------------------------------------------
+
+1. Customer cleared browser cache and cookies - no change
+2. Customer tried incognito/private browsing mode - same error
+3. Customer tried different browsers (Chrome, Firefox, Edge) - same error
+4. Customer confirmed other SSO-protected apps work fine
+5. Support verified customer's SSO configuration is correct
+6. Support confirmed the issue reproduces in our staging environment
+7. Checked platform status page - no reported incidents
+8. Verified customer's subscription and entitlements are active
+
+--------------------------------------------------------------------------------
+INTERNAL NOTES
+--------------------------------------------------------------------------------
+
+[2026-02-10 15:00 - Agent: Lisa Park]
+Confirmed this is related to the v4.2.1 release. The user-preferences
+microservice has a new dependency on the feature-flags service which was
+not included in the deployment manifest. Escalating to the Platform team.
+
+[2026-02-11 09:15 - Agent: Raj Krishnan]
+Engineering confirmed. Hotfix PR #4891 is in review. ETA for production
+deployment: 2026-02-12 06:00 UTC. Communicating timeline to customer.
+
+--------------------------------------------------------------------------------
+RESOLUTION (PENDING)
+--------------------------------------------------------------------------------
+
+Root cause: Missing service dependency in deployment manifest for v4.2.1.
+Fix: Hotfix release v4.2.2 with corrected service mesh configuration.
+ETA: 2026-02-12 06:00 UTC
+Workaround: None available. Feature-flags service must be deployed alongside
+             the user-preferences service.
+
+================================================================================
+                      END OF SUPPORT TICKET
+================================================================================

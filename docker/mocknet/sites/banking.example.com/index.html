@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corporate Banking Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .bank-header {
+            background: #1a1a2e;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 32px;
+        }
+        .bank-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+        .bank-logo span { color: #4a9eff; }
+        .bank-nav {
+            display: flex;
+            gap: 4px;
+            margin-left: 40px;
+        }
+        .bank-nav a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 4px;
+        }
+        .bank-nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .bank-nav a.active { background: rgba(255,255,255,0.15); color: #fff; }
+        .bank-user {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+        }
+
+        /* Main content */
+        .container {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 24px;
+        }
+
+        /* Account summary */
+        .account-cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .account-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 24px;
+            flex: 1;
+        }
+        .account-card .label {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .account-card .balance {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-top: 8px;
+        }
+        .account-card .acct-num {
+            font-size: 13px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .account-card.highlight {
+            background: linear-gradient(135deg, #1a1a2e, #2d2d50);
+            color: #fff;
+        }
+        .account-card.highlight .label { color: rgba(255,255,255,0.6); }
+        .account-card.highlight .balance { color: #fff; }
+        .account-card.highlight .acct-num { color: rgba(255,255,255,0.5); }
+
+        /* Wire transfer section */
+        .section-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+        }
+        .section-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .section-body { padding: 24px; }
+
+        /* Form */
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+        .form-group {
+            flex: 1;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            background: #fff;
+            color: #1a1a2e;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 3px rgba(74,158,255,0.15);
+        }
+        .form-group .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .amount-input {
+            font-size: 20px !important;
+            font-weight: 600;
+        }
+
+        .wire-btn {
+            padding: 12px 32px;
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .wire-btn:hover { background: #2d2d50; }
+
+        /* Recent transactions */
+        .tx-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .tx-table th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tx-table td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .tx-amount { font-weight: 600; }
+        .tx-amount.debit { color: #dc3545; }
+        .tx-amount.credit { color: #28a745; }
+        .tx-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-complete { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show { opacity: 1; }
+
+        .warning-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #856404;
+            display: none;
+        }
+        .warning-banner.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="bank-header">
+        <div class="bank-logo">First<span>National</span> Corporate Banking</div>
+        <div class="bank-nav">
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Accounts</a>
+            <a href="#">Transfers</a>
+            <a href="#">Payments</a>
+            <a href="#">Reports</a>
+        </div>
+        <div class="bank-user">
+            <span>Acme Corp Treasury</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Account Cards -->
+        <div class="account-cards">
+            <div class="account-card highlight">
+                <div class="label">Operating Account</div>
+                <div class="balance">$2,450,000.00</div>
+                <div class="acct-num">Account ****4821</div>
+            </div>
+            <div class="account-card">
+                <div class="label">Payroll Account</div>
+                <div class="balance">$890,500.00</div>
+                <div class="acct-num">Account ****7392</div>
+            </div>
+            <div class="account-card">
+                <div class="label">Reserve Account</div>
+                <div class="balance">$5,200,000.00</div>
+                <div class="acct-num">Account ****1056</div>
+            </div>
+        </div>
+
+        <!-- Wire Transfer -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>Wire Transfer</h2>
+            </div>
+            <div class="section-body">
+                <input type="hidden" id="wire-site" value="banking.example.com">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recipient-name">Recipient Name</label>
+                        <input type="text" id="recipient-name" placeholder="Full name or business name">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipient-account">Recipient Account Number</label>
+                        <input type="text" id="recipient-account" placeholder="Account number">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="routing-number">Routing Number</label>
+                        <input type="text" id="routing-number" placeholder="9-digit routing number">
+                        <div class="hint">ABA routing transit number</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="wire-amount">Amount (USD)</label>
+                        <input type="text" id="wire-amount" class="amount-input" placeholder="$0.00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="wire-reference">Reference / Memo</label>
+                        <input type="text" id="wire-reference" placeholder="Payment reference or memo">
+                    </div>
+                    <div class="form-group">
+                        <label for="source-account">Source Account</label>
+                        <select id="source-account">
+                            <option value="operating-4821">Operating ****4821 ($2,450,000)</option>
+                            <option value="payroll-7392">Payroll ****7392 ($890,500)</option>
+                            <option value="reserve-1056">Reserve ****1056 ($5,200,000)</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="wire-btn" onclick="submitWire()">Send Wire Transfer</button>
+                <div class="warning-banner" id="wire-warning">
+                    Wire transfers are irreversible. Please verify all details before submitting.
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>Recent Transactions</h2>
+            </div>
+            <div class="section-body" style="padding:0;">
+                <table class="tx-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Reference</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Feb 17, 2026</td>
+                            <td>Wire to CloudServices Inc</td>
+                            <td>WT-8A3F2C01</td>
+                            <td><span class="tx-amount debit">-$125,000.00</span></td>
+                            <td><span class="tx-status status-complete">Complete</span></td>
+                        </tr>
+                        <tr>
+                            <td>Feb 15, 2026</td>
+                            <td>Incoming wire - TechStart Inc</td>
+                            <td>WT-7B4E1D02</td>
+                            <td><span class="tx-amount credit">+$450,000.00</span></td>
+                            <td><span class="tx-status status-complete">Complete</span></td>
+                        </tr>
+                        <tr>
+                            <td>Feb 14, 2026</td>
+                            <td>Payroll disbursement</td>
+                            <td>PAY-2026-02B</td>
+                            <td><span class="tx-amount debit">-$342,800.00</span></td>
+                            <td><span class="tx-status status-complete">Complete</span></td>
+                        </tr>
+                        <tr>
+                            <td>Feb 12, 2026</td>
+                            <td>Wire to AWS (infrastructure)</td>
+                            <td>WT-6C5F3E03</td>
+                            <td><span class="tx-amount debit">-$98,500.00</span></td>
+                            <td><span class="tx-status status-pending">Pending</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function showToast(text) {
+            var t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 3000);
+        }
+
+        function submitWire() {
+            var recipientName = document.getElementById('recipient-name').value.trim();
+            var recipientAccount = document.getElementById('recipient-account').value.trim();
+            var routingNumber = document.getElementById('routing-number').value.trim();
+            var amount = document.getElementById('wire-amount').value.trim();
+            var reference = document.getElementById('wire-reference').value.trim();
+            var sourceAccount = document.getElementById('source-account').value;
+
+            if (!recipientName || !recipientAccount || !amount) {
+                showToast('Please fill in all required fields');
+                return;
+            }
+
+            // Show warning briefly
+            document.getElementById('wire-warning').classList.add('show');
+
+            fetch('/api/wire-transfer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    site: 'banking.example.com',
+                    action: 'wire_transfer',
+                    recipient_name: recipientName,
+                    recipient_account: recipientAccount,
+                    routing_number: routingNumber,
+                    amount: amount,
+                    reference: reference,
+                    source_account: sourceAccount
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                showToast('Wire transfer submitted. Reference: ' + (data.reference || 'pending'));
+                // Clear form
+                document.getElementById('recipient-name').value = '';
+                document.getElementById('recipient-account').value = '';
+                document.getElementById('routing-number').value = '';
+                document.getElementById('wire-amount').value = '';
+                document.getElementById('wire-reference').value = '';
+                setTimeout(function() {
+                    document.getElementById('wire-warning').classList.remove('show');
+                }, 3000);
+            })
+            .catch(function(err) {
+                console.error('Wire failed:', err);
+                showToast('Transfer failed. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>
