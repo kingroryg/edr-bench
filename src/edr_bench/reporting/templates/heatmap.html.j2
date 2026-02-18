@@ -1,0 +1,23 @@
+<div class="heatmap-container" id="mitre-heatmap">
+    {% if technique_scores %}
+    <div class="heatmap-grid">
+        {% for score in technique_scores %}
+        <div class="heatmap-cell"
+             data-technique="{{ score.technique_id }}"
+             data-rate="{{ score.detection_rate }}"
+             title="{{ score.technique_id }}: {{ score.technique_name }} ({{ "%.0f"|format(score.detection_rate * 100) }}% detection, {{ score.scenario_count }} scenarios)"
+             style="background-color: {{ 'hsl(120, 60%%, %d%%)'|format(30 + score.detection_rate * 40) if score.detection_rate >= 0.5 else 'hsl(0, 60%%, %d%%)'|format(30 + (1 - score.detection_rate) * 40) }}">
+            <span class="technique-id">{{ score.technique_id }}</span>
+            <span class="technique-rate">{{ "%.0f"|format(score.detection_rate * 100) }}%</span>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="heatmap-legend">
+        <span class="legend-low">0% detected</span>
+        <div class="legend-gradient"></div>
+        <span class="legend-high">100% detected</span>
+    </div>
+    {% else %}
+    <p class="no-data">No technique-level data available.</p>
+    {% endif %}
+</div>

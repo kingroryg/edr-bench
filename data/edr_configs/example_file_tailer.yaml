@@ -1,0 +1,28 @@
+# Example config for tailing EDR log files
+# Point this at wherever your EDR writes its alerts
+
+type: file_tailer
+log_path: /var/log/edr/alerts.json
+format: json
+
+# How to map fields from the EDR's JSON to our standard Finding model
+field_mapping:
+  timestamp: "timestamp"
+  rule_name: "alert.signature"
+  severity: "alert.severity"
+  description: "alert.description"
+  mitre_technique_id: "alert.metadata.mitre_attack.technique_id"
+  process_name: "process.name"
+  process_pid: "process.pid"
+  command_line: "process.command_line"
+  file_path: "file.path"
+  network_dst: "dest_ip"
+  network_port: "dest_port"
+
+# Map the EDR's severity labels to our standard levels
+severity_mapping:
+  "1": "low"
+  "2": "medium"
+  "3": "high"
+  "critical": "critical"
+  "informational": "info"

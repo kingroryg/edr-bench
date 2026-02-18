@@ -1,0 +1,126 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background: #f5f5f7;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+header {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+header .meta { display: flex; gap: 2rem; flex-wrap: wrap; opacity: 0.8; font-size: 0.9rem; }
+
+section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+h2 { font-size: 1.3rem; margin-bottom: 1rem; color: #1a1a2e; }
+
+.score-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.score-card {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    border-radius: 10px;
+    background: #f8f9fa;
+}
+
+.score-value { font-size: 2rem; font-weight: 700; }
+.score-value.good { color: #2d6a4f; }
+.score-value.warn { color: #e76f51; }
+.score-value.bad { color: #c1121f; }
+.score-label { font-size: 0.85rem; color: #555; margin-top: 0.3rem; }
+
+.summary-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+thead { background: #f8f9fa; }
+th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #eee; }
+th { font-weight: 600; color: #333; }
+
+td.good { color: #2d6a4f; font-weight: 600; }
+td.warn { color: #e76f51; font-weight: 600; }
+td.bad { color: #c1121f; font-weight: 600; }
+
+tr.error-row { background: #fff5f5; }
+
+.heatmap-container { padding: 1rem 0; }
+
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 4px;
+}
+
+.heatmap-cell {
+    padding: 0.6rem 0.4rem;
+    border-radius: 6px;
+    text-align: center;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.heatmap-cell:hover { transform: scale(1.05); }
+.technique-id { display: block; font-size: 0.75rem; font-weight: 700; }
+.technique-rate { display: block; font-size: 0.7rem; opacity: 0.9; }
+
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: #555;
+}
+
+.legend-gradient {
+    flex: 1;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(to right, hsl(0, 60%, 50%), hsl(60, 60%, 50%), hsl(120, 60%, 50%));
+}
+
+footer {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+    font-size: 0.85rem;
+}
+
+footer a { color: #4361ee; }
+
+.errors ul { list-style: disc; padding-left: 1.5rem; }
+.errors li { color: #c1121f; margin-bottom: 0.3rem; }
+.no-data { color: #888; font-style: italic; }

@@ -1,0 +1,43 @@
+# Example config for polling an EDR vendor's REST API
+# Swap in your EDR's actual endpoint and API key
+
+type: api_poller
+api_url: https://edr-console.example.com/api/v1/alerts
+api_key: your-api-key-here
+
+# How often to check for new alerts (in seconds)
+poll_interval: 5.0
+
+# Extra headers if your EDR needs them
+headers:
+  Accept: application/json
+  X-Auth-Token: "${EDR_API_KEY}"
+
+# How to map fields from the API response to our standard Finding model
+field_mapping:
+  timestamp: "created_at"
+  rule_name: "detection_name"
+  severity: "severity"
+  description: "summary"
+  mitre_technique_id: "tactics[0].technique_id"
+  process_name: "process.name"
+  process_pid: "process.pid"
+  command_line: "process.cmdline"
+  file_path: "file.full_path"
+  network_dst: "network.remote_ip"
+  network_port: "network.remote_port"
+  blocked: "action_taken"
+
+# Map the EDR's severity labels to our standard levels
+severity_mapping:
+  "low": "low"
+  "medium": "medium"
+  "high": "high"
+  "critical": "critical"
+  "info": "info"
+
+# Map action values to blocked true/false
+blocked_values:
+  - "blocked"
+  - "quarantined"
+  - "killed"

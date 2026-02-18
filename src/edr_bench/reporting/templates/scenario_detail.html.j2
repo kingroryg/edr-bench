@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scenario: {{ result.scenario_name }}</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <header>
+        <h1>{{ result.scenario_name }}</h1>
+        <div class="meta">
+            <span>ID: {{ result.scenario_id }}</span>
+            <span>Platform: {{ result.platform.value }}</span>
+            <span>Technique: {{ result.mitre_technique_id }}</span>
+            <span>Attack Type: {{ result.attack_type.value }}</span>
+        </div>
+    </header>
+
+    <section class="detail-scores">
+        <h2>Scores</h2>
+        <table>
+            <tr><td>Detection Rate</td><td>{{ "%.1f"|format(result.detection_rate * 100) }}%</td></tr>
+            <tr><td>Contextual Accuracy</td><td>{{ "%.1f"|format(result.contextual_accuracy * 100) }}%</td></tr>
+            <tr>
+                <td>Time to Detect</td>
+                <td>
+                    {% if result.time_to_detect_seconds is not none %}
+                        {{ "%.1f"|format(result.time_to_detect_seconds) }}s
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><td>Blocking Efficacy</td><td>{{ "%.1f"|format(result.blocking_efficacy * 100) }}%</td></tr>
+            <tr><td>Noise Ratio</td><td>{{ "%.1f"|format(result.noise_ratio * 100) }}%</td></tr>
+        </table>
+    </section>
+
+    <section class="detail-counts">
+        <h2>Event Counts</h2>
+        <table>
+            <tr><td>Ground Truth Events</td><td>{{ result.ground_truth_count }}</td></tr>
+            <tr><td>EDR Findings</td><td>{{ result.findings_count }}</td></tr>
+            <tr><td>Matched</td><td>{{ result.matched_count }}</td></tr>
+            <tr><td>False Positives</td><td>{{ result.false_positive_count }}</td></tr>
+        </table>
+    </section>
+
+    {% if result.execution_started and result.execution_finished %}
+    <section class="timing">
+        <h2>Execution Timing</h2>
+        <p>Started: {{ result.execution_started.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+        <p>Finished: {{ result.execution_finished.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+    </section>
+    {% endif %}
+
+    {% if result.errors %}
+    <section class="errors">
+        <h2>Errors</h2>
+        <ul>
+            {% for error in result.errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <footer>
+        <a href="report.html">Back to Report</a>
+    </footer>
+</body>
+</html>

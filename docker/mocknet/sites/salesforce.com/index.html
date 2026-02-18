@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesforce Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Salesforce Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1b96ff 0%, #032d60 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .login-container {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 48px 40px;
+            width: 420px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #032d60;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            color: #706e6b;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #3e3e3c;
+            margin-bottom: 6px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #c9c7c5;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        input:focus { border-color: #1b96ff; box-shadow: 0 0 3px rgba(27,150,255,0.4); }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #0176d3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        .btn:hover { background: #014486; }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #706e6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">Salesforce</div>
+        <div class="subtitle">Log in to your account</div>
+        <form action="/api/login" method="POST">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn">Log In</button>
+        </form>
+        <div class="footer">Use your company credentials to sign in.</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+log_level: INFO
+dry_run: false
+correlation_window_seconds: 30.0
+scenarios_dir: data/scenarios
+report_output_dir: reports
+
+docker:
+  host: unix:///var/run/docker.sock
+  compose_project: edr-bench
+  network_subnet: "172.28.0.0/16"
+  network_name: edr-bench-net
+
+vnc:
+  password: edrbench
+  display: ":1"
+  port: 5900
+  novnc_port: 6080
+  screenshot_interval: 1.0
+
+agent:
+  anthropic_model: claude-sonnet-4-5-20250514
+  openai_model: computer-use-preview
+  max_agent_steps: 50
+  screenshot_timeout: 5.0
+
+tracee:
+  enabled: true
+  output_format: json
+  image: aquasec/tracee:latest
+
+edr:
+  log_path: /var/log/edr/alerts.json
+  syslog_port: 1514
+  poll_interval: 5.0
+  name: Unknown EDR

@@ -1,0 +1,149 @@
+version: "3.9"
+
+services:
+  victim-linux:
+    build:
+      context: ./victim-linux
+    profiles: [linux, full]
+    ports:
+      - "5900:5900"
+      - "6080:6080"
+    networks:
+      edr-bench-net:
+        ipv4_address: 172.28.1.10
+    environment:
+      - VNC_PASSWORD=${VNC_PASSWORD:-changeme}
+      - DISPLAY=:1
+    depends_on:
+      mocknet:
+        condition: service_healthy
+    volumes:
+      - /var/log/edr:/var/log/edr
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6080"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  victim-windows:
+    build:
+      context: ./victim-windows
+    profiles: [windows, full]
+    networks:
+      edr-bench-net:
+        ipv4_address: 172.28.1.20
+    depends_on:
+      mocknet:
+        condition: service_healthy
+
+  mocknet:
+    build:
+      context: ./mocknet
+    profiles: [linux, windows, full]
+    networks:
+      edr-bench-net:
+        ipv4_address: 172.28.2.10
+    ports:
+      - "80:80"
+      - "443:443"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  mitmproxy:
+    build:
+      context: ./mitmproxy
+    profiles: [linux, windows, full]
+    networks:
+      edr-bench-net:
+        ipv4_address: 172.28.2.20
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - ./mitmproxy/flows:/flows
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  tracee:
+    image: aquasec/tracee:latest
+    profiles: [linux, full]
+    privileged: true
+    pid: host
+    volumes:
+      - /etc/os-release:/etc/os-release-host:ro
+      - /boot:/boot:ro
+      - /usr/src:/usr/src:ro
+      - /lib/modules:/lib/modules:ro
+      - /tmp/tracee:/tmp/tracee
+    networks:
+      edr-bench-net:
+        ipv4_address: 172.28.3.10
+    command: --output json --filter container
+
+  controller:
+    build:
+      context: ./controller
+    profiles: [linux, windows, cloud, phishing, full]
+    networks:
+      edr-bench-net:
+        ipv4_address: 172.28.0.10
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - ../.env
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import docker; docker.from_env().ping()"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  localstack:
+    image: localstack/localstack:latest
+    profiles: [cloud, full]
+    networks:
+      edr-bench-net:
+        ipv4_address: 172.28.4.10
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  gophish:
+    build:
+      context: ./gophish
+    profiles: [phishing, full]
+    networks:
+      edr-bench-net:
+        ipv4_address: 172.28.5.10
+    ports:
+      - "3333:3333"
+      - "8888:80"
+    healthcheck:
+      test: ["CMD", "curl", "-fk", "https://localhost:3333"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+networks:
+  edr-bench-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
