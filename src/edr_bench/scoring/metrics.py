@@ -18,10 +18,11 @@ def calc_detection_rate(matched: int, total_gt: int) -> float:
     Returns
     -------
     float
-        A value in ``[0.0, 1.0]``.  Returns ``0.0`` when *total_gt* is zero.
+        A value in ``[0.0, 1.0]``.  Returns ``1.0`` when *total_gt* is zero
+        (nothing to detect means nothing was missed).
     """
     if total_gt <= 0:
-        return 0.0
+        return 1.0  # Nothing to detect = nothing missed
     return min(matched / total_gt, 1.0)
 
 
@@ -39,7 +40,7 @@ def calc_contextual_accuracy(
     Returns a value in ``[0.0, 1.0]``.
     """
     if not matched_pairs:
-        return 0.0
+        return 1.0  # No pairs to evaluate = no errors
 
     scores: list[float] = []
     for gt, finding in matched_pairs:

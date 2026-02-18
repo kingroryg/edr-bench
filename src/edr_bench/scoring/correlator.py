@@ -211,6 +211,8 @@ class GroundTruthCorrelator:
 
         # ------------------------------------------------------------------
         # 1. Process name match  (weight 1.0)
+        #    When both sides have a process name and they don't match,
+        #    treat as a hard mismatch (return 0.0 immediately).
         # ------------------------------------------------------------------
         if gt.process_name and finding.process_name:
             gt_proc = gt.process_name.lower()
@@ -220,7 +222,9 @@ class GroundTruthCorrelator:
                 or gt_proc in f_proc
                 or f_proc in gt_proc
             )
-            checks.append((match, 1.0))
+            if not match:
+                return 0.0
+            checks.append((True, 1.0))
 
         # ------------------------------------------------------------------
         # 2. Command line overlap  (weight 1.0)

@@ -50,6 +50,11 @@ class CLIExecutor(AttackExecutor):
                 exit_code=result.exit_code,
                 stderr=result.stderr[:500] if result.stderr else "",
             )
+            if not step.allow_nonzero_exit:
+                raise RuntimeError(
+                    f"CLI step {step.order} exited with code {result.exit_code}: "
+                    f"{(result.stderr or '')[:200]}"
+                )
 
         logger.info(
             "cli_exec_complete",

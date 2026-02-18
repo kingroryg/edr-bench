@@ -94,15 +94,16 @@ services:
       - /boot:/boot:ro
       - /usr/src:/usr/src:ro
       - /lib/modules:/lib/modules:ro
-      - /tmp/tracee:/tmp/tracee
+      - tracee-output:/tmp/tracee
     networks:
       edr-bench-net:
         ipv4_address: 172.28.3.10
-    command: --output json --filter container
+    command: --output json --output option:parse-arguments --filter container --output file:/tmp/tracee/out/events.json
 
   controller:
     build:
-      context: ./controller
+      context: ..
+      dockerfile: docker/controller/Dockerfile
     profiles: [linux, windows, cloud, phishing, full]
     networks:
       edr-bench-net:
@@ -110,6 +111,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - mocknet-logs:/var/log/mocknet:ro
+      - ../data:/app/data:ro
+      - ./mitmproxy/flows:/flows:ro
+      - tracee-output:/tmp/tracee:ro
     env_file:
       - ../.env
     healthcheck:
@@ -157,6 +161,8 @@ volumes:
   usb-sim:
     driver: local
   mocknet-logs:
+    driver: local
+  tracee-output:
     driver: local
 
 networks:

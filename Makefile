@@ -2,6 +2,8 @@
 
 COMPOSE := docker compose -f docker/docker-compose.yml
 PROFILE ?= linux
+REPORT_FILE ?= reports/latest.json
+REPORT_OUTPUT ?= reports/report.html
 
 build:
 	$(COMPOSE) --profile $(PROFILE) build
@@ -48,7 +50,7 @@ run-dry:
 	edr-bench run --platform linux --dry-run
 
 report:
-	edr-bench report
+	edr-bench report $(REPORT_FILE) -o $(REPORT_OUTPUT)
 
 clean:
 	$(COMPOSE) down -v --rmi local

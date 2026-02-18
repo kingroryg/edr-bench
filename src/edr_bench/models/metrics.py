@@ -57,6 +57,12 @@ class ScenarioResult(BaseModel):
     findings_count: int = Field(ge=0)
     matched_count: int = Field(ge=0)
     false_positive_count: int = Field(ge=0)
+    coach_coverage: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Fraction of Coach-expected events confirmed by MockNet (attack execution success rate)",
+    )
 
     execution_started: datetime | None = None
     execution_finished: datetime | None = None

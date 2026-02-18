@@ -31,7 +31,9 @@ class TraceeMonitor:
         self._events: list[GroundTruthEvent] = []
         self._running = False
         self._task: asyncio.Task[None] | None = None
-        self._output_path = _DEFAULT_TRACEE_OUTPUT
+        self._output_path = getattr(
+            settings, "tracee_output_path", _DEFAULT_TRACEE_OUTPUT
+        )
 
     async def start(self, container_id: str) -> None:
         """Start consuming Tracee JSON output, filtering for *container_id*."""

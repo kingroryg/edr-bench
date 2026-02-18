@@ -95,3 +95,8 @@ class Settings(BaseSettings):
     correlation_window_seconds: float = 30.0
     dry_run: bool = False
     log_level: str = "INFO"
+
+    # Ground truth file paths (inside the controller container)
+    mitmproxy_flow_path: Path | None = Path("/flows/traffic.jsonl")
+    mocknet_traffic_path: Path | None = Path("/var/log/mocknet/traffic.jsonl")
+    tracee_output_path: Path = Path("/tmp/tracee/out/events.json")

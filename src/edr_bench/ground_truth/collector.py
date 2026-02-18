@@ -28,6 +28,7 @@ class GroundTruthCollector:
         self._scenario_id: str | None = None
         self._start_time: datetime | None = None
         self._container_id: str | None = None
+        self._mitmproxy_flow_path: Path | None = None
         self._mocknet_traffic_path: Path | None = None
 
     async def collect(
@@ -53,6 +54,7 @@ class GroundTruthCollector:
         self._scenario_id = scenario_id
         self._start_time = datetime.now().astimezone()
         self._container_id = container_id
+        self._mitmproxy_flow_path = mitmproxy_flow_path
         self._mocknet_traffic_path = mocknet_traffic_path
 
         # Start Tracee monitor
@@ -113,11 +115,12 @@ class GroundTruthCollector:
         except Exception:
             logger.exception("ground_truth_collector.docker_collect_failed")
 
-        # Parse mitmproxy flows
-        if mitmproxy_flow_path is not None and self._start_time is not None:
+        # Parse mitmproxy flows (use param if given, else fall back to stored path)
+        effective_mitmproxy_path = mitmproxy_flow_path or self._mitmproxy_flow_path
+        if effective_mitmproxy_path is not None and self._start_time is not None:
             try:
                 mitmproxy_events = self._mitmproxy.parse_flows_for_scenario(
-                    flow_path=mitmproxy_flow_path,
+                    flow_path=effective_mitmproxy_path,
                     scenario_id=scenario_id,
                     start_time=self._start_time,
                     end_time=end_time,

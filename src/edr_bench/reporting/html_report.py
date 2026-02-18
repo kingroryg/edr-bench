@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 
 import structlog
@@ -17,8 +18,13 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 class HTMLReporter:
     """Generate HTML benchmark reports with MITRE ATT&CK heatmap."""
 
-    def __init__(self, templates_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        templates_dir: Path | None = None,
+        screenshots_dir: Path | None = None,
+    ) -> None:
         self.templates_dir = templates_dir or TEMPLATES_DIR
+        self.screenshots_dir = screenshots_dir or Path("reports/screenshots")
         self.env = Environment(
             loader=FileSystemLoader(str(self.templates_dir)),
             autoescape=select_autoescape(["html"]),
@@ -28,12 +34,16 @@ class HTMLReporter:
         """Render and write HTML report."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Build screenshot map: scenario_id -> list of base64-encoded PNGs
+        screenshot_map = self._collect_screenshots(report)
+
         template = self.env.get_template("report.html.j2")
         html = template.render(
             report=report,
             technique_scores=report.technique_scores,
             platform_breakdown=report.platform_breakdown,
             attack_type_breakdown=report.attack_type_breakdown,
+            screenshots=screenshot_map,
         )
 
         output_path.write_text(html)
@@ -47,6 +57,24 @@ class HTMLReporter:
                 (static_dst / f.name).write_text(f.read_text())
 
         logger.info("html_report_written", path=str(output_path))
+
+    def _collect_screenshots(
+        self, report: BenchmarkReport
+    ) -> dict[str, list[str]]:
+        """Collect base64-encoded screenshots for each scenario."""
+        result: dict[str, list[str]] = {}
+        for sr in report.scenario_results:
+            scenario_dir = self.screenshots_dir / sr.scenario_id
+            if not scenario_dir.exists():
+                continue
+            pngs = sorted(scenario_dir.glob("step_*.png"))
+            if pngs:
+                encoded = []
+                for png in pngs:
+                    data = base64.b64encode(png.read_bytes()).decode("ascii")
+                    encoded.append(f"data:image/png;base64,{data}")
+                result[sr.scenario_id] = encoded
+        return result
 
     def render_heatmap(self, report: BenchmarkReport) -> str:
         """Render just the MITRE ATT&CK heatmap fragment."""

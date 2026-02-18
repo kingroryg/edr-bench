@@ -18,9 +18,9 @@ from edr_bench.executors.terraform_executor import TerraformExecutor
 from edr_bench.executors.ui_executor import UIExecutor
 from edr_bench.executors.usb_simulator import USBSimulatorExecutor
 from edr_bench.ground_truth.collector import GroundTruthCollector
-from edr_bench.models.enums import Platform, Role
+from edr_bench.models.enums import GroundTruthSource, Platform, Role
 from edr_bench.models.ground_truth import GroundTruthEvent
-from edr_bench.models.metrics import BenchmarkReport, ScenarioResult, StepResult
+from edr_bench.models.metrics import BenchmarkReport, ScenarioResult, StepResult, TechniqueScore
 from edr_bench.models.scenario import Scenario, SimulationStep
 from edr_bench.orchestrator.lifecycle import DockerLifecycleManager
 from edr_bench.orchestrator.scheduler import ScenarioScheduler
@@ -102,6 +102,7 @@ class BenchmarkOrchestrator:
         ground_truth_events: list[GroundTruthEvent] = []
 
         step_results: list[StepResult] = []
+        synthetic_gt: list[GroundTruthEvent] = []
 
         if self.settings.dry_run:
             timer.stop()
@@ -123,9 +124,23 @@ class BenchmarkOrchestrator:
                 execution_finished=timer.end_time,
             )
 
+        # Resolve container ID for ground truth filtering
+        container_id = ""
+        try:
+            container_id = await self.lifecycle.get_victim_container_id(
+                scenario.platform.value
+            )
+        except Exception:
+            logger.warning("could_not_resolve_container_id", scenario_id=scenario.id)
+
         # Start ground truth collection
         gt_task = asyncio.create_task(
-            self.ground_truth_collector.collect(scenario.id)
+            self.ground_truth_collector.collect(
+                scenario.id,
+                container_id=container_id,
+                mitmproxy_flow_path=self.settings.mitmproxy_flow_path,
+                mocknet_traffic_path=self.settings.mocknet_traffic_path,
+            )
         )
 
         # Execute each step, tracking per-step results
@@ -172,6 +187,26 @@ class BenchmarkOrchestrator:
                     duration_seconds=round(step_duration, 3),
                 )
                 step_results.append(step_result)
+
+                # Create synthetic ground truth for successful steps
+                if step_status == "success":
+                    synthetic_gt.append(
+                        GroundTruthEvent(
+                            timestamp=datetime.now(timezone.utc),
+                            source=GroundTruthSource.SCENARIO_DEFINITION,
+                            scenario_id=scenario.id,
+                            step_order=step.order,
+                            event_type="step_execution",
+                            command_line=step.command,
+                            content_summary=step.expected_artifact,
+                            details={
+                                "description": step.description,
+                                "role": step.role,
+                                "mitre_technique_id": scenario.mitre_technique_id,
+                            },
+                        )
+                    )
+
                 logger.info(
                     "step_result",
                     scenario_id=scenario.id,
@@ -185,6 +220,10 @@ class BenchmarkOrchestrator:
         await asyncio.sleep(5.0)
         ground_truth_events = await self.ground_truth_collector.stop_and_collect()
         gt_task.cancel()
+
+        # Merge synthetic ground truth from successful steps
+        ground_truth_events.extend(synthetic_gt)
+        ground_truth_events.sort(key=lambda e: e.timestamp)
 
         timer.stop()
 
@@ -261,6 +300,20 @@ class BenchmarkOrchestrator:
         noise = [r.noise_ratio for r in results]
         overall_noise = sum(noise) / len(noise) if noise else 0.0
 
+        # Aggregate detection rates by MITRE technique ID
+        technique_scores = self._build_technique_scores(results)
+
+        # Aggregate detection rates by platform
+        platform_breakdown = self._build_platform_breakdown(results)
+
+        # Aggregate detection rates by attack type
+        attack_type_breakdown: dict[str, float] = {}
+        at_groups: dict[str, list[float]] = {}
+        for r in results:
+            at_groups.setdefault(r.attack_type, []).append(r.detection_rate)
+        for at, rates in at_groups.items():
+            attack_type_breakdown[at] = sum(rates) / len(rates)
+
         return BenchmarkReport(
             report_id=run_id,
             generated_at=now,
@@ -272,8 +325,41 @@ class BenchmarkOrchestrator:
             average_time_to_detect=avg_ttd,
             overall_blocking_efficacy=overall_block,
             overall_noise_ratio=overall_noise,
+            technique_scores=technique_scores,
+            platform_breakdown=platform_breakdown,
+            attack_type_breakdown=attack_type_breakdown,
             total_scenarios=len(results),
             total_ground_truth_events=total_gt,
             total_findings=total_findings,
             total_errors=total_errors,
         )
+
+    @staticmethod
+    def _build_technique_scores(results: list[ScenarioResult]) -> list[TechniqueScore]:
+        """Aggregate detection rates by MITRE technique ID."""
+        groups: dict[str, list[float]] = {}
+        names: dict[str, str] = {}
+        for r in results:
+            tid = r.mitre_technique_id
+            groups.setdefault(tid, []).append(r.detection_rate)
+            names.setdefault(tid, tid)
+        return [
+            TechniqueScore(
+                technique_id=tid,
+                technique_name=names[tid],
+                detection_rate=sum(rates) / len(rates),
+                scenario_count=len(rates),
+            )
+            for tid, rates in sorted(groups.items())
+        ]
+
+    @staticmethod
+    def _build_platform_breakdown(results: list[ScenarioResult]) -> dict[str, float]:
+        """Aggregate detection rates by platform."""
+        groups: dict[str, list[float]] = {}
+        for r in results:
+            groups.setdefault(r.platform, []).append(r.detection_rate)
+        return {
+            platform: sum(rates) / len(rates)
+            for platform, rates in groups.items()
+        }

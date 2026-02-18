@@ -32,6 +32,10 @@ class SimulationStep(BaseModel):
         description="Expected file, process, or network artifact for ground truth",
     )
     timeout_seconds: int = Field(default=60, ge=1, description="Max execution time")
+    allow_nonzero_exit: bool = Field(
+        default=False,
+        description="If True, non-zero exit codes will not raise an error (for steps where failure is expected)",
+    )
     atomic_test_id: str | None = Field(
         default=None,
         description="Atomic Red Team test GUID (e.g. T1059.001-1)",
