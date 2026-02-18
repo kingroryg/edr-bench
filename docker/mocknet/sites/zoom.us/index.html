@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Zoom - Video Conferencing</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f6f6f6; }
+        .header { background: #2d8cff; color: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .content { max-width: 800px; margin: 40px auto; padding: 0 16px; }
+        .meeting-card { background: white; border-radius: 12px; padding: 32px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+        .meeting-card h2 { margin: 0 0 16px; }
+        .btn { padding: 12px 32px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 8px; }
+        .btn-join { background: #2d8cff; color: white; }
+        .btn-host { background: #e67300; color: white; }
+        .chat-panel { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .chat-panel h3 { margin: 0 0 12px; }
+        .chat-panel textarea { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 10px; resize: none; box-sizing: border-box; }
+        .chat-panel button { background: #2d8cff; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        input[type=file] { margin: 12px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Zoom</h1>
+        <span>Meeting ID: 123-456-7890</span>
+    </div>
+    <div class="content">
+        <div class="meeting-card">
+            <h2>Weekly Team Standup</h2>
+            <p>Meeting in progress - 5 participants</p>
+            <button class="btn btn-join">Join Meeting</button>
+            <button class="btn btn-host">Share Screen</button>
+        </div>
+        <div class="chat-panel">
+            <h3>Meeting Chat</h3>
+            <textarea id="chat-message" rows="3" placeholder="Type a message to the meeting..."></textarea>
+            <br>
+            <input type="file" id="file-input">
+            <br>
+            <button onclick="sendChat()">Send</button>
+            <button onclick="shareFile()">Share File</button>
+        </div>
+    </div>
+    <script>
+        function sendChat() {
+            const msg = document.getElementById('chat-message').value;
+            if (!msg) return;
+            fetch('/api/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({site: 'zoom.us', action: 'meeting_chat', meeting_id: '123-456-7890', content: msg})
+            });
+            document.getElementById('chat-message').value = '';
+        }
+        function shareFile() {
+            const file = document.getElementById('file-input').files[0];
+            if (!file) return alert('Select a file to share');
+            const fd = new FormData();
+            fd.append('site', 'zoom.us');
+            fd.append('action', 'share_file_in_meeting');
+            fd.append('file', file);
+            fetch('/api/capture', {method: 'POST', body: fd});
+        }
+    </script>
+</body>
+</html>

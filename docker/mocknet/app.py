@@ -331,6 +331,145 @@ def print_document():
 
 
 # -------------------------------------------------------------------
+# File upload catch-all (for curl-to-IP exfil scenarios)
+# -------------------------------------------------------------------
+
+@app.route("/upload", methods=["POST", "PUT"])
+def upload():
+    """
+    Catch-all upload endpoint for exfil scenarios that POST files
+    to external IPs (which iptables DNAT redirects here).
+    """
+    saved_files = []
+    if request.files:
+        for key, f in request.files.items():
+            fname = secure_filename(f.filename or "unnamed")
+            save_name = f"{uuid.uuid4().hex[:8]}_{fname}"
+            save_path = os.path.join(UPLOAD_DIR, save_name)
+            f.save(save_path)
+            saved_files.append({
+                "field": key,
+                "original_name": f.filename,
+                "saved_as": save_name,
+                "size_bytes": os.path.getsize(save_path),
+            })
+
+    payload = {}
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+    elif request.form:
+        payload = dict(request.form)
+
+    _log_event({
+        "endpoint": "/upload",
+        "site": request.host,
+        "action": "file_upload_exfil",
+        "data": payload,
+        "uploaded_files": saved_files,
+        "content_length": request.content_length or 0,
+    })
+
+    return jsonify({"status": "uploaded", "files": len(saved_files)})
+
+
+# -------------------------------------------------------------------
+# Mock git HTTP protocol (for git push scenarios)
+# -------------------------------------------------------------------
+
+@app.route("/<path:repo_path>/info/refs", methods=["GET"])
+def git_info_refs(repo_path):
+    """Mock git service advertisement for push scenarios."""
+    service = request.args.get("service", "git-upload-pack")
+
+    _log_event({
+        "endpoint": f"/{repo_path}/info/refs",
+        "site": request.host,
+        "action": "git_service_discovery",
+        "data": {"repo": repo_path, "service": service},
+    })
+
+    if service == "git-receive-pack":
+        # Minimal valid git-receive-pack advertisement (empty repo)
+        zero_id = "0" * 40
+        cap_line = f"{zero_id} capabilities^{{}}\x00 report-status delete-refs ofs-delta side-band-64k\n"
+        pkt_cap = f"{len(cap_line) + 4:04x}{cap_line}"
+        header = "001f# service=git-receive-pack\n"
+        body = header + "0000" + pkt_cap + "0000"
+        return Response(
+            body,
+            content_type="application/x-git-receive-pack-advertisement",
+            status=200,
+        )
+
+    return Response("service not available", status=403)
+
+
+@app.route("/<path:repo_path>/git-receive-pack", methods=["POST"])
+def git_receive_pack(repo_path):
+    """Mock git push handler. Logs the push attempt and pack data size."""
+    pack_size = request.content_length or len(request.data or b"")
+
+    _log_event({
+        "endpoint": f"/{repo_path}/git-receive-pack",
+        "site": request.host,
+        "action": "git_push",
+        "data": {
+            "repo": repo_path,
+            "pack_size_bytes": pack_size,
+        },
+        "content_length": pack_size,
+    })
+
+    # Return a minimal success response in pkt-line format
+    result_line = "unpack ok\n"
+    pkt_result = f"{len(result_line) + 4:04x}{result_line}"
+    return Response(
+        pkt_result + "0000",
+        content_type="application/x-git-receive-pack-result",
+        status=200,
+    )
+
+
+# -------------------------------------------------------------------
+# Catch-all for any path (logs everything nginx proxies here)
+# -------------------------------------------------------------------
+
+@app.route("/<path:path>", methods=["POST", "PUT"])
+def catch_all(path):
+    """Log any POST/PUT that doesn't match a specific endpoint."""
+    payload = {}
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+    elif request.form:
+        payload = dict(request.form)
+
+    saved_files = []
+    if request.files:
+        for key, f in request.files.items():
+            fname = secure_filename(f.filename or "unnamed")
+            save_name = f"{uuid.uuid4().hex[:8]}_{fname}"
+            save_path = os.path.join(UPLOAD_DIR, save_name)
+            f.save(save_path)
+            saved_files.append({
+                "field": key,
+                "original_name": f.filename,
+                "saved_as": save_name,
+                "size_bytes": os.path.getsize(save_path),
+            })
+
+    _log_event({
+        "endpoint": f"/{path}",
+        "site": request.host,
+        "action": "catch_all",
+        "data": payload,
+        "uploaded_files": saved_files,
+        "content_length": request.content_length or 0,
+    })
+
+    return jsonify({"status": "ok"})
+
+
+# -------------------------------------------------------------------
 # Health check
 # -------------------------------------------------------------------
 

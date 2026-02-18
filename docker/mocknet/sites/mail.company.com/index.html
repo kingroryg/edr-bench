@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Acme Corp Mail</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f5f5f5; }
+        .header { background: #1a73e8; color: white; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .layout { display: flex; height: calc(100vh - 52px); }
+        .sidebar { width: 200px; background: white; border-right: 1px solid #e0e0e0; padding: 12px; }
+        .sidebar .compose-btn { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 24px; cursor: pointer; width: 100%; font-size: 14px; margin-bottom: 16px; }
+        .sidebar .folder { padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .sidebar .folder:hover { background: #f0f0f0; }
+        .sidebar .folder.active { background: #e8f0fe; color: #1a73e8; }
+        .main { flex: 1; padding: 0; }
+        .email-list .email-item { padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; background: white; }
+        .email-item:hover { background: #f8f8f8; }
+        .email-item .from { font-weight: 600; font-size: 14px; }
+        .email-item .subject { font-size: 14px; }
+        .email-item .preview { font-size: 13px; color: #888; }
+        .compose-modal { display: none; position: fixed; bottom: 0; right: 80px; width: 500px; background: white; border-radius: 8px 8px 0 0; box-shadow: 0 -2px 12px rgba(0,0,0,0.2); }
+        .compose-modal .modal-header { background: #333; color: white; padding: 10px 16px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; }
+        .compose-modal .modal-body { padding: 16px; }
+        .compose-modal input, .compose-modal textarea { width: 100%; border: none; border-bottom: 1px solid #eee; padding: 8px 0; font-size: 14px; box-sizing: border-box; }
+        .compose-modal input:focus, .compose-modal textarea:focus { outline: none; border-bottom-color: #1a73e8; }
+        .compose-modal textarea { border: none; resize: none; height: 200px; }
+        .compose-modal .send-btn { background: #1a73e8; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; margin-top: 12px; }
+        .compose-modal .attach-btn { background: none; border: 1px solid #ccc; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 12px; margin-left: 8px; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>Acme Corp Mail</h1></div>
+    <div class="layout">
+        <div class="sidebar">
+            <button class="compose-btn" onclick="openCompose()">Compose</button>
+            <div class="folder active">Inbox (3)</div>
+            <div class="folder">Sent</div>
+            <div class="folder">Drafts</div>
+        </div>
+        <div class="main">
+            <div class="email-list">
+                <div class="email-item">
+                    <div class="from">CEO - Mark Johnson</div>
+                    <div class="subject">Urgent: Wire Transfer Needed</div>
+                    <div class="preview">Hi, I need you to process an urgent wire transfer for the acquisition deal. Please send $250,000 to...</div>
+                </div>
+                <div class="email-item">
+                    <div class="from">CFO - Sarah Williams</div>
+                    <div class="subject">Q3 Financial Review - Confidential</div>
+                    <div class="preview">Please find attached the Q3 financial review. This is strictly confidential until the earnings call...</div>
+                </div>
+                <div class="email-item">
+                    <div class="from">IT Security</div>
+                    <div class="subject">Password Reset Required</div>
+                    <div class="preview">Your corporate password will expire in 3 days. Please update it at...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="compose-modal" id="compose-modal">
+        <div class="modal-header">
+            <span>New Message</span>
+            <span style="cursor:pointer" onclick="document.getElementById('compose-modal').style.display='none'">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="text" id="to" placeholder="To">
+            <input type="text" id="subject" placeholder="Subject">
+            <textarea id="body" placeholder="Compose email..."></textarea>
+            <input type="file" id="attachment" style="display:none">
+            <button class="send-btn" onclick="sendEmail()">Send</button>
+            <button class="attach-btn" onclick="document.getElementById('attachment').click()">Attach</button>
+        </div>
+    </div>
+    <script>
+        function openCompose() { document.getElementById('compose-modal').style.display = 'block'; }
+        function sendEmail() {
+            const fd = new FormData();
+            fd.append('site', 'mail.company.com');
+            fd.append('action', 'send_email');
+            fd.append('to', document.getElementById('to').value);
+            fd.append('subject', document.getElementById('subject').value);
+            fd.append('body', document.getElementById('body').value);
+            const file = document.getElementById('attachment').files[0];
+            if (file) fd.append('file', file);
+            fetch('/api/send', {method: 'POST', body: fd});
+            document.getElementById('compose-modal').style.display = 'none';
+            alert('Email sent!');
+        }
+    </script>
+</body>
+</html>

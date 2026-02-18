@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Acme Corp Banking Portal</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f0f2f5; }
+        .header { background: #1b4332; color: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .content { max-width: 700px; margin: 32px auto; padding: 0 16px; }
+        .balance-card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .balance-card h2 { margin: 0 0 8px; font-size: 16px; color: #666; }
+        .balance-card .amount { font-size: 36px; font-weight: 700; color: #1b4332; }
+        .transfer-card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .transfer-card h2 { margin: 0 0 16px; }
+        .form-group { margin: 12px 0; }
+        .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+        .btn-transfer { background: #1b4332; color: white; border: none; padding: 14px 32px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Acme Corp Banking Portal</h1>
+        <span>Account: 4821-XXXX-7193</span>
+    </div>
+    <div class="content">
+        <div class="balance-card">
+            <h2>Operating Account Balance</h2>
+            <div class="amount">$2,847,392.15</div>
+        </div>
+        <div class="transfer-card">
+            <h2>Wire Transfer</h2>
+            <div class="form-group">
+                <label>Recipient Name</label>
+                <input type="text" id="recipient_name" placeholder="Enter recipient name">
+            </div>
+            <div class="form-group">
+                <label>Recipient Account / IBAN</label>
+                <input type="text" id="recipient_account" placeholder="Account number or IBAN">
+            </div>
+            <div class="form-group">
+                <label>Routing / SWIFT Code</label>
+                <input type="text" id="routing" placeholder="Routing or SWIFT code">
+            </div>
+            <div class="form-group">
+                <label>Amount (USD)</label>
+                <input type="number" id="amount" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Reference / Memo</label>
+                <input type="text" id="memo" placeholder="Wire transfer reference">
+            </div>
+            <button class="btn-transfer" onclick="submitWire()">Submit Wire Transfer</button>
+        </div>
+    </div>
+    <script>
+        function submitWire() {
+            fetch('/api/wire-transfer', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    site: 'banking-portal.example.com',
+                    action: 'wire_transfer',
+                    recipient_name: document.getElementById('recipient_name').value,
+                    recipient_account: document.getElementById('recipient_account').value,
+                    routing: document.getElementById('routing').value,
+                    amount: document.getElementById('amount').value,
+                    memo: document.getElementById('memo').value
+                })
+            }).then(r => r.json()).then(d => alert('Wire submitted. Reference: ' + d.reference));
+        }
+    </script>
+</body>
+</html>

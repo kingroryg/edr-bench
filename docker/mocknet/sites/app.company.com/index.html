@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Acme Corp - Internal Portal</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f5f5f5; }
+        .header { background: #2c3e50; color: white; padding: 12px 24px; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .content { max-width: 800px; margin: 24px auto; padding: 0 16px; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card h3 { margin: 0 0 12px; color: #2c3e50; }
+        .status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-warn { background: #fff3cd; color: #856404; }
+        .metric { display: inline-block; margin: 8px 16px 8px 0; }
+        .metric .value { font-size: 24px; font-weight: 700; color: #2c3e50; }
+        .metric .label { font-size: 12px; color: #888; }
+        .form-group { margin: 12px 0; }
+        .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; }
+        .form-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+        button { background: #2c3e50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>Acme Corp Internal Portal</h1></div>
+    <div class="content">
+        <div class="card">
+            <h3>System Status</h3>
+            <span class="status status-ok">All Systems Operational</span>
+            <div style="margin-top: 12px">
+                <div class="metric"><div class="value">99.97%</div><div class="label">Uptime (30d)</div></div>
+                <div class="metric"><div class="value">23ms</div><div class="label">Avg Response</div></div>
+                <div class="metric"><div class="value">1.2M</div><div class="label">Requests/day</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Device Compliance</h3>
+            <span class="status status-warn">Action Required</span>
+            <p>Your device is missing the following compliance requirements:</p>
+            <ul>
+                <li>Disk encryption: <strong>Not enabled</strong></li>
+                <li>OS version: <strong>Outdated (requires update)</strong></li>
+                <li>Firewall: <strong>Disabled</strong></li>
+            </ul>
+            <p>Please enable disk encryption and update your OS to maintain access to corporate resources.</p>
+        </div>
+        <div class="card">
+            <h3>Quick Links</h3>
+            <p><a href="http://salesforce.com">CRM (Salesforce)</a> | <a href="http://slack.com">Slack</a> | <a href="http://mail.company.com">Corporate Email</a></p>
+        </div>
+    </div>
+</body>
+</html>

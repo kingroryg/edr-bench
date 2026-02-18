@@ -20,6 +20,42 @@ http_proxy=http://172.28.2.20:8080
 https_proxy=http://172.28.2.20:8080
 EOF
 
+# ---------------------------------------------------------------------------
+# Network sandbox: route external IPs and DNS through mocknet
+# ---------------------------------------------------------------------------
+# Scenarios reference external IPs (203.0.113.x, 192.168.1.x) for exfil
+# targets. DNAT redirects them to the mocknet container so the commands
+# actually succeed and we can capture ground truth.
+echo "[entrypoint] Setting up iptables DNAT rules..."
+iptables -t nat -A OUTPUT -d 203.0.113.0/24 -j DNAT --to-destination 172.28.2.10 || true
+iptables -t nat -A OUTPUT -d 192.168.1.0/24 -j DNAT --to-destination 172.28.2.10 || true
+
+# Redirect all outgoing DNS (port 53) to dnsmasq on mocknet so even
+# explicit @8.8.8.8 queries in exfil scenarios get logged.
+iptables -t nat -A OUTPUT -p udp --dport 53 ! -d 172.28.2.10 -j DNAT --to-destination 172.28.2.10:53 || true
+iptables -t nat -A OUTPUT -p tcp --dport 53 ! -d 172.28.2.10 -j DNAT --to-destination 172.28.2.10:53 || true
+
+# ---------------------------------------------------------------------------
+# SSH config: accept all host keys (test environment only)
+# ---------------------------------------------------------------------------
+mkdir -p /root/.ssh
+chmod 700 /root/.ssh
+cat >> /etc/ssh/ssh_config <<SSHEOF
+Host *
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+    LogLevel ERROR
+SSHEOF
+
+# Create user home directory structure
+mkdir -p /home/user/Downloads /home/user/Documents /home/user/.ssh
+chmod 700 /home/user/.ssh
+
+# Set up git config for test scenarios
+git config --global user.email "testuser@acme.com"
+git config --global user.name "Test User"
+git config --global init.defaultBranch main
+
 # Set up xstartup for VNC
 cat > /root/.vnc/xstartup <<EOF
 #!/bin/bash

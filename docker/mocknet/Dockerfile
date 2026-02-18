@@ -4,7 +4,24 @@ RUN apt-get update && apt-get install -y \
     nginx \
     dnsmasq \
     curl \
+    openssh-server \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# Set up SSH server for scp/sftp test scenarios
+RUN mkdir -p /run/sshd \
+    && useradd -m -s /bin/bash user \
+    && echo "user:test" | chpasswd \
+    && mkdir -p /tmp/exfil \
+    && chown user:user /tmp/exfil \
+    && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
+
+# Set up bare git repos for git push test scenarios
+RUN mkdir -p /var/www/git/testuser \
+    && git init --bare /var/www/git/testuser/test-repo.git \
+    && git init --bare /var/www/git/testuser/ci-repo.git \
+    && chown -R www-data:www-data /var/www/git
 
 # Install Python dependencies
 COPY requirements.txt /app/requirements.txt
@@ -23,9 +40,10 @@ COPY sites/ /var/www/
 # Create log directory
 RUN mkdir -p /var/log/mocknet
 
-EXPOSE 80 443 53
+EXPOSE 80 443 53 22 8080
 
 # NOTE: Make sure entrypoint commands are executable in the build context.
-CMD dnsmasq --keep-in-foreground &  \
+CMD /usr/sbin/sshd && \
+    dnsmasq --keep-in-foreground &  \
     nginx &  \
     python3 /app/app.py
