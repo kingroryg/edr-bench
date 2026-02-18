@@ -1,6 +1,7 @@
 """Correlate ground truth events with EDR findings."""
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Sequence
 
@@ -10,6 +11,51 @@ from edr_bench.models.finding import Finding
 from edr_bench.models.ground_truth import GroundTruthEvent
 
 logger = structlog.get_logger(__name__)
+
+# ---------------------------------------------------------------------------
+# Lookup tables for semantic / data-classification matching
+# ---------------------------------------------------------------------------
+
+# Maps canonical data_classification values to sets of keywords that EDR
+# descriptions or rule names commonly use when referring to that class.
+_DATA_CLASSIFICATION_SYNONYMS: dict[str, set[str]] = {
+    "pii": {
+        "pii", "personally identifiable", "personal data", "personal information",
+        "ssn", "social security", "date of birth", "email address", "phone number",
+        "name and address", "customer data", "customer record", "sensitive data",
+        "gdpr", "ccpa", "privacy",
+    },
+    "credentials": {
+        "credentials", "credential", "password", "secret", "api key", "apikey",
+        "access token", "token", "private key", "ssh key", "auth", "authentication",
+        "login", "secret key", "passphrase",
+    },
+    "phi": {
+        "phi", "protected health", "health information", "hipaa", "medical record",
+        "patient data", "patient record", "health data", "diagnosis",
+    },
+    "financial": {
+        "financial", "credit card", "bank account", "routing number", "payment",
+        "invoice", "billing", "pci", "cardholder",
+    },
+    "proprietary_code": {
+        "proprietary", "source code", "intellectual property", "trade secret",
+        "internal code", "confidential code", "proprietary code",
+    },
+}
+
+# Maps canonical action_type values to sets of keywords likely to appear in
+# EDR finding descriptions or rule names.
+_ACTION_TYPE_KEYWORDS: dict[str, set[str]] = {
+    "upload_file": {"upload", "file transfer", "file upload", "exfiltration", "exfil", "sent file"},
+    "paste_text": {"paste", "clipboard", "copy paste", "pasted", "clipboard content"},
+    "download": {"download", "file download", "downloaded", "retrieval"},
+    "send_message": {"send", "message", "chat", "post", "submit", "sent"},
+    "share_link": {"share", "sharing", "shared link", "link sharing"},
+    "email": {"email", "mail", "smtp", "sent mail", "attachment"},
+    "print": {"print", "printer", "printed"},
+    "screen_capture": {"screenshot", "screen capture", "screen recording", "screengrab"},
+}
 
 
 @dataclass
@@ -129,24 +175,56 @@ class GroundTruthCorrelator:
         return 0.4 * temporal_score + 0.6 * attr_score
 
     @staticmethod
+    def _keyword_overlap(text_a: str, text_b: str) -> float:
+        """Compute Jaccard similarity between word tokens of two strings.
+
+        Both strings are lowercased and split on whitespace / punctuation
+        boundaries.  Returns a float in ``[0, 1]``.
+        """
+        if not text_a or not text_b:
+            return 0.0
+
+        tokens_a = set(re.split(r"[\s\W_]+", text_a.lower())) - {""}
+        tokens_b = set(re.split(r"[\s\W_]+", text_b.lower())) - {""}
+
+        if not tokens_a or not tokens_b:
+            return 0.0
+
+        intersection = tokens_a & tokens_b
+        union = tokens_a | tokens_b
+        return len(intersection) / len(union)
+
+    @staticmethod
     def _attribute_overlap(gt: GroundTruthEvent, finding: Finding) -> float:
         """Score attribute overlap between a ground truth event and finding.
 
-        Compares: process_name, command_line, file_path, network_dst.
+        Compares classic telemetry attributes (process_name, command_line,
+        file_path, network_dst) as well as Coach-specific semantic
+        dimensions (destination_site, content/description keywords,
+        data_classification, action_type).
+
         Returns a value in ``[0, 1]``.
         """
+        # Each entry is ``(matched: bool, weight: float)``.
+        # Only checks where *both* sides have data are appended.
         checks: list[tuple[bool, float]] = []
 
-        # Process name match
+        # ------------------------------------------------------------------
+        # 1. Process name match  (weight 1.0)
+        # ------------------------------------------------------------------
         if gt.process_name and finding.process_name:
+            gt_proc = gt.process_name.lower()
+            f_proc = finding.process_name.lower()
             match = (
-                gt.process_name.lower() == finding.process_name.lower()
-                or gt.process_name.lower() in finding.process_name.lower()
-                or finding.process_name.lower() in gt.process_name.lower()
+                gt_proc == f_proc
+                or gt_proc in f_proc
+                or f_proc in gt_proc
             )
             checks.append((match, 1.0))
 
-        # Command line overlap
+        # ------------------------------------------------------------------
+        # 2. Command line overlap  (weight 1.0)
+        # ------------------------------------------------------------------
         if gt.command_line and finding.command_line:
             gt_tokens = set(gt.command_line.lower().split())
             f_tokens = set(finding.command_line.lower().split())
@@ -156,7 +234,9 @@ class GroundTruthCorrelator:
                 )
                 checks.append((overlap > 0.3, overlap))
 
-        # File path match
+        # ------------------------------------------------------------------
+        # 3. File path match  (weight 1.0)
+        # ------------------------------------------------------------------
         if gt.file_path and finding.file_path:
             match = (
                 gt.file_path == finding.file_path
@@ -165,11 +245,103 @@ class GroundTruthCorrelator:
             )
             checks.append((match, 1.0 if match else 0.0))
 
-        # Network destination match
+        # ------------------------------------------------------------------
+        # 4. Network destination match  (weight 1.0)
+        # ------------------------------------------------------------------
         if gt.network_dst and finding.network_dst:
             match = gt.network_dst == finding.network_dst
             checks.append((match, 1.0 if match else 0.0))
 
+        # ------------------------------------------------------------------
+        # 5. Destination site match  (weight 0.8)
+        #    Compare gt.destination_site against:
+        #      - finding.network_dst  (exact / substring)
+        #      - finding.description  (substring in free text)
+        # ------------------------------------------------------------------
+        if gt.destination_site:
+            dst_lower = gt.destination_site.lower()
+            candidate_texts: list[str] = []
+            if finding.network_dst:
+                candidate_texts.append(finding.network_dst.lower())
+            if finding.description:
+                candidate_texts.append(finding.description.lower())
+            if finding.rule_name:
+                candidate_texts.append(finding.rule_name.lower())
+
+            if candidate_texts:
+                matched_dst = any(dst_lower in t for t in candidate_texts)
+                checks.append((matched_dst, 0.8))
+
+        # ------------------------------------------------------------------
+        # 6. Description / content keyword overlap  (weight 0.7)
+        #    Combine gt.content_summary + gt.action_type as the ground truth
+        #    text and compare against finding.description + finding.rule_name.
+        # ------------------------------------------------------------------
+        gt_text_parts: list[str] = []
+        if gt.content_summary:
+            gt_text_parts.append(gt.content_summary)
+        if gt.action_type:
+            gt_text_parts.append(gt.action_type)
+
+        finding_text_parts: list[str] = []
+        if finding.description:
+            finding_text_parts.append(finding.description)
+        if finding.rule_name:
+            finding_text_parts.append(finding.rule_name)
+
+        if gt_text_parts and finding_text_parts:
+            gt_text = " ".join(gt_text_parts)
+            finding_text = " ".join(finding_text_parts)
+            kw_score = GroundTruthCorrelator._keyword_overlap(gt_text, finding_text)
+            # Treat a Jaccard score > 0.1 as a positive signal
+            checks.append((kw_score > 0.1, kw_score * 0.7))
+
+        # ------------------------------------------------------------------
+        # 7. Data classification match  (weight 0.6)
+        #    If gt.data_classification is set, look for synonym keywords in
+        #    the finding description / rule_name.
+        # ------------------------------------------------------------------
+        if gt.data_classification and (finding.description or finding.rule_name):
+            classification_key = gt.data_classification.lower().strip()
+            synonyms = _DATA_CLASSIFICATION_SYNONYMS.get(classification_key)
+
+            # Build the full text to search in from the finding
+            search_text = " ".join(
+                t for t in [finding.description, finding.rule_name] if t
+            ).lower()
+
+            if synonyms:
+                matched_cls = any(syn in search_text for syn in synonyms)
+            else:
+                # Fallback: check if the raw classification string appears
+                matched_cls = classification_key in search_text
+            checks.append((matched_cls, 0.6))
+
+        # ------------------------------------------------------------------
+        # 8. Action type match  (weight 0.5)
+        #    If gt.action_type is set, look for action-related keywords in
+        #    the finding description / rule_name.
+        # ------------------------------------------------------------------
+        if gt.action_type and (finding.description or finding.rule_name):
+            action_key = gt.action_type.lower().strip()
+            action_keywords = _ACTION_TYPE_KEYWORDS.get(action_key)
+
+            search_text_action = " ".join(
+                t for t in [finding.description, finding.rule_name] if t
+            ).lower()
+
+            if action_keywords:
+                matched_action = any(kw in search_text_action for kw in action_keywords)
+            else:
+                # Fallback: split the action_type on underscores and check
+                # if any fragment appears in the finding text.
+                fragments = action_key.replace("_", " ").split()
+                matched_action = any(frag in search_text_action for frag in fragments)
+            checks.append((matched_action, 0.5))
+
+        # ------------------------------------------------------------------
+        # Aggregate
+        # ------------------------------------------------------------------
         if not checks:
             # No overlapping attributes to compare; give a small base score
             # so temporal-only matches can still succeed (weakly).

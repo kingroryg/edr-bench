@@ -107,4 +107,5 @@ class GroundTruthSource(StrEnum):
     TRACEE = "tracee"
     MITMPROXY = "mitmproxy"
     DOCKER_EVENTS = "docker_events"
+    MOCKNET = "mocknet"
     SCENARIO_DEFINITION = "scenario_definition"

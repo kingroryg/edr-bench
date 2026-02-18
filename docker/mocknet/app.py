@@ -8,8 +8,10 @@ An EDR tool's job is to detect these actions. Our job is to record them
 faithfully so we can score the EDR later.
 """
 
+import io
 import json
 import os
+import tarfile
 import time
 import uuid
 from datetime import datetime, timezone
@@ -373,12 +375,35 @@ def upload():
 
 
 # -------------------------------------------------------------------
+# Git pkt-line helpers
+# -------------------------------------------------------------------
+
+def _pkt_line(data: str) -> bytes:
+    """Encode a string as a git pkt-line (4-hex-digit length prefix)."""
+    encoded = data.encode()
+    length = len(encoded) + 4
+    return f"{length:04x}".encode() + encoded
+
+
+def _flush_pkt() -> bytes:
+    """Return a git flush packet."""
+    return b"0000"
+
+
+# -------------------------------------------------------------------
 # Mock git HTTP protocol (for git push scenarios)
 # -------------------------------------------------------------------
 
 @app.route("/<path:repo_path>/info/refs", methods=["GET"])
 def git_info_refs(repo_path):
-    """Mock git service advertisement for push scenarios."""
+    """Mock git smart HTTP service advertisement for push scenarios.
+
+    Implements the git smart HTTP discovery protocol:
+      1. Service announcement pkt-line
+      2. Flush packet
+      3. Capabilities line (zero-hash for empty repo)
+      4. Flush packet
+    """
     service = request.args.get("service", "git-upload-pack")
 
     _log_event({
@@ -389,12 +414,17 @@ def git_info_refs(repo_path):
     })
 
     if service == "git-receive-pack":
-        # Minimal valid git-receive-pack advertisement (empty repo)
-        zero_id = "0" * 40
-        cap_line = f"{zero_id} capabilities^{{}}\x00 report-status delete-refs ofs-delta side-band-64k\n"
-        pkt_cap = f"{len(cap_line) + 4:04x}{cap_line}"
-        header = "001f# service=git-receive-pack\n"
-        body = header + "0000" + pkt_cap + "0000"
+        # Step 1: service announcement + flush
+        body = _pkt_line("# service=git-receive-pack\n") + _flush_pkt()
+
+        # Step 2: capabilities for empty repo (zero-hash) + flush
+        zero_hash = "0" * 40
+        cap_line = (
+            f"{zero_hash} capabilities^{{}}\0"
+            " report-status delete-refs ofs-delta side-band-64k\n"
+        )
+        body += _pkt_line(cap_line) + _flush_pkt()
+
         return Response(
             body,
             content_type="application/x-git-receive-pack-advertisement",
@@ -406,8 +436,13 @@ def git_info_refs(repo_path):
 
 @app.route("/<path:repo_path>/git-receive-pack", methods=["POST"])
 def git_receive_pack(repo_path):
-    """Mock git push handler. Logs the push attempt and pack data size."""
-    pack_size = request.content_length or len(request.data or b"")
+    """Mock git-receive-pack (handles git push).
+
+    Reads the pack data sent by the client, logs the push event and
+    pack data size, then returns a valid report-status response.
+    """
+    pack_data = request.data or b""
+    pack_size = request.content_length or len(pack_data)
 
     _log_event({
         "endpoint": f"/{repo_path}/git-receive-pack",
@@ -420,14 +455,174 @@ def git_receive_pack(repo_path):
         "content_length": pack_size,
     })
 
-    # Return a minimal success response in pkt-line format
-    result_line = "unpack ok\n"
-    pkt_result = f"{len(result_line) + 4:04x}{result_line}"
+    # Build report-status response in pkt-line format
+    body = _pkt_line("unpack ok\n")
+    body += _pkt_line("ok refs/heads/main\n")
+    body += _flush_pkt()
+
     return Response(
-        pkt_result + "0000",
+        body,
         content_type="application/x-git-receive-pack-result",
         status=200,
     )
+
+
+# -------------------------------------------------------------------
+# Mock npm registry (for typosquat / supply-chain scenarios)
+# -------------------------------------------------------------------
+
+@app.route("/<package_name>", methods=["GET"])
+def npm_package_lookup(package_name):
+    """Mock npm registry lookup for typosquat scenarios.
+
+    npm does GET https://registry.npmjs.org/<package-name> and expects
+    a JSON package manifest.  We only respond when the Host header
+    indicates registry.npmjs.org so we don't interfere with other
+    mock sites.
+    """
+    if "registry.npmjs.org" not in request.host:
+        return Response("Not found", status=404)
+
+    _log_event({
+        "endpoint": f"/{package_name}",
+        "site": "registry.npmjs.org",
+        "action": "npm_package_lookup",
+        "data": {"package": package_name},
+    })
+
+    return jsonify({
+        "name": package_name,
+        "description": f"A package called {package_name}",
+        "dist-tags": {"latest": "1.0.0"},
+        "versions": {
+            "1.0.0": {
+                "name": package_name,
+                "version": "1.0.0",
+                "description": f"A package called {package_name}",
+                "dist": {
+                    "tarball": f"http://registry.npmjs.org/{package_name}/-/{package_name}-1.0.0.tgz",
+                    "shasum": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+                },
+            }
+        },
+        "time": {
+            "created": "2026-02-17T00:00:00.000Z",
+            "modified": "2026-02-17T00:00:00.000Z",
+            "1.0.0": "2026-02-17T00:00:00.000Z",
+        },
+    })
+
+
+@app.route("/<package_name>/-/<filename>", methods=["GET"])
+def npm_package_tarball(package_name, filename):
+    """Serve a minimal valid npm package tarball.
+
+    npm fetches the tarball URL from the manifest and expects a gzipped
+    tar archive containing at least ``package/package.json``.
+    """
+    if "registry.npmjs.org" not in request.host:
+        return Response("Not found", status=404)
+
+    _log_event({
+        "endpoint": f"/{package_name}/-/{filename}",
+        "site": "registry.npmjs.org",
+        "action": "npm_package_download",
+        "data": {"package": package_name, "filename": filename},
+    })
+
+    # Build a minimal valid gzipped tarball containing package.json
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+        pkg_json = json.dumps({
+            "name": package_name,
+            "version": "1.0.0",
+        }).encode()
+        info = tarfile.TarInfo(name="package/package.json")
+        info.size = len(pkg_json)
+        tar.addfile(info, io.BytesIO(pkg_json))
+    buf.seek(0)
+
+    return Response(buf.read(), content_type="application/octet-stream")
+
+
+# -------------------------------------------------------------------
+# Mock PyPI (for typosquat / supply-chain scenarios)
+# -------------------------------------------------------------------
+
+@app.route("/simple/<package_name>/", methods=["GET"])
+def pypi_simple(package_name):
+    """Mock PyPI simple index for typosquat scenarios.
+
+    pip does GET https://pypi.org/simple/<package-name>/ and expects
+    an HTML page with download links.
+    """
+    if "pypi.org" not in request.host:
+        return Response("Not found", status=404)
+
+    _log_event({
+        "endpoint": f"/simple/{package_name}/",
+        "site": "pypi.org",
+        "action": "pypi_package_lookup",
+        "data": {"package": package_name},
+    })
+
+    html = (
+        "<!DOCTYPE html>\n"
+        "<html><body>\n"
+        f'<a href="http://files.pythonhosted.org/packages/'
+        f'{package_name}-1.0.0.tar.gz#sha256='
+        f'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855">'
+        f"{package_name}-1.0.0.tar.gz</a>\n"
+        "</body></html>"
+    )
+    return Response(html, content_type="text/html")
+
+
+@app.route("/packages/<path:filename>", methods=["GET"])
+def pypi_file(filename):
+    """Serve a minimal Python sdist tarball.
+
+    pip downloads from files.pythonhosted.org/packages/<path>.  We
+    return a valid gzipped tar containing a minimal setup.py.
+    """
+    if "files.pythonhosted.org" not in request.host:
+        return Response("Not found", status=404)
+
+    # Derive package name from filename (e.g. "somepackage-1.0.0.tar.gz")
+    base = filename.rsplit("/", 1)[-1] if "/" in filename else filename
+    pkg_name = base.split("-")[0] if "-" in base else base
+
+    _log_event({
+        "endpoint": f"/packages/{filename}",
+        "site": "files.pythonhosted.org",
+        "action": "pypi_package_download",
+        "data": {"filename": filename, "package": pkg_name},
+    })
+
+    # Build a minimal valid sdist tarball
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+        # setup.py
+        setup_py = (
+            f"from setuptools import setup\n"
+            f"setup(name='{pkg_name}', version='1.0.0')\n"
+        ).encode()
+        info = tarfile.TarInfo(name=f"{pkg_name}-1.0.0/setup.py")
+        info.size = len(setup_py)
+        tar.addfile(info, io.BytesIO(setup_py))
+
+        # PKG-INFO (pip may expect this)
+        pkg_info = (
+            f"Metadata-Version: 1.0\n"
+            f"Name: {pkg_name}\n"
+            f"Version: 1.0.0\n"
+        ).encode()
+        info2 = tarfile.TarInfo(name=f"{pkg_name}-1.0.0/PKG-INFO")
+        info2.size = len(pkg_info)
+        tar.addfile(info2, io.BytesIO(pkg_info))
+    buf.seek(0)
+
+    return Response(buf.read(), content_type="application/octet-stream")
 
 
 # -------------------------------------------------------------------

@@ -48,8 +48,27 @@ Host *
 SSHEOF
 
 # Create user home directory structure
-mkdir -p /home/user/Downloads /home/user/Documents /home/user/.ssh
+mkdir -p /home/user/Downloads /home/user/Documents /home/user/.ssh /home/user/PDF
 chmod 700 /home/user/.ssh
+
+# ---------------------------------------------------------------------------
+# Configure CUPS-PDF virtual printer
+# ---------------------------------------------------------------------------
+echo "[entrypoint] Configuring CUPS-PDF printer..."
+mkdir -p /var/spool/cups-pdf/ANONYMOUS
+# Add a virtual PDF printer if it doesn't already exist
+if ! lpstat -p PDF 2>/dev/null; then
+    lpadmin -p PDF -v cups-pdf:/ -E -m lsb/usr/cups-pdf/CUPS-PDF_opt.ppd 2>/dev/null || \
+    lpadmin -p PDF -v cups-pdf:/ -E -m raw 2>/dev/null || \
+    echo "[entrypoint] CUPS-PDF printer setup deferred to cupsd start"
+fi
+# Set PDF output directory
+mkdir -p /etc/cups
+if [ -f /etc/cups/cups-pdf.conf ]; then
+    sed -i 's|^Out .*|Out /home/user/PDF|' /etc/cups/cups-pdf.conf
+else
+    echo "Out /home/user/PDF" > /etc/cups/cups-pdf.conf
+fi
 
 # Set up git config for test scenarios
 git config --global user.email "testuser@acme.com"

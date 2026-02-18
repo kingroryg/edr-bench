@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -19,7 +20,7 @@ from edr_bench.executors.usb_simulator import USBSimulatorExecutor
 from edr_bench.ground_truth.collector import GroundTruthCollector
 from edr_bench.models.enums import Platform, Role
 from edr_bench.models.ground_truth import GroundTruthEvent
-from edr_bench.models.metrics import BenchmarkReport, ScenarioResult
+from edr_bench.models.metrics import BenchmarkReport, ScenarioResult, StepResult
 from edr_bench.models.scenario import Scenario, SimulationStep
 from edr_bench.orchestrator.lifecycle import DockerLifecycleManager
 from edr_bench.orchestrator.scheduler import ScenarioScheduler
@@ -100,6 +101,8 @@ class BenchmarkOrchestrator:
         errors: list[str] = []
         ground_truth_events: list[GroundTruthEvent] = []
 
+        step_results: list[StepResult] = []
+
         if self.settings.dry_run:
             timer.stop()
             return ScenarioResult(
@@ -125,15 +128,58 @@ class BenchmarkOrchestrator:
             self.ground_truth_collector.collect(scenario.id)
         )
 
-        # Execute each step
+        # Execute each step, tracking per-step results
         for step in scenario.simulation_steps:
+            step_start = time.monotonic()
+            step_status = "success"
+            step_error: str | None = None
             try:
                 executor = self._get_executor(step)
-                await executor.execute(step, scenario)
-            except Exception as e:
-                error_msg = f"Step {step.order} failed: {e}"
-                logger.error("step_failed", scenario_id=scenario.id, step=step.order, error=str(e))
+                await asyncio.wait_for(
+                    executor.execute(step, scenario),
+                    timeout=step.timeout_seconds if hasattr(step, "timeout_seconds") and step.timeout_seconds else None,
+                )
+            except asyncio.TimeoutError:
+                step_status = "timeout"
+                step_error = f"Step {step.order} timed out"
+                error_msg = f"Step {step.order} timed out"
+                logger.error(
+                    "step_timeout",
+                    scenario_id=scenario.id,
+                    step=step.order,
+                    role=step.role,
+                )
                 errors.append(error_msg)
+            except Exception as e:
+                step_status = "failed"
+                step_error = str(e)
+                error_msg = f"Step {step.order} failed: {e}"
+                logger.error(
+                    "step_failed",
+                    scenario_id=scenario.id,
+                    step=step.order,
+                    role=step.role,
+                    error=str(e),
+                )
+                errors.append(error_msg)
+            finally:
+                step_duration = time.monotonic() - step_start
+                step_result = StepResult(
+                    step_order=step.order,
+                    role=step.role,
+                    status=step_status,
+                    error_message=step_error,
+                    duration_seconds=round(step_duration, 3),
+                )
+                step_results.append(step_result)
+                logger.info(
+                    "step_result",
+                    scenario_id=scenario.id,
+                    step_order=step.order,
+                    role=step.role,
+                    status=step_status,
+                    duration_seconds=round(step_duration, 3),
+                )
 
         # Wait for ground truth events to settle
         await asyncio.sleep(5.0)
@@ -147,13 +193,18 @@ class BenchmarkOrchestrator:
         result.execution_started = timer.start_time
         result.execution_finished = timer.end_time
         result.errors = errors
+        result.step_results = step_results
 
+        succeeded = sum(1 for s in step_results if s.status == "success")
         logger.info(
             "scenario_complete",
             scenario_id=scenario.id,
             detection_rate=result.detection_rate,
             ground_truth=result.ground_truth_count,
             findings=result.findings_count,
+            steps_total=len(step_results),
+            steps_succeeded=succeeded,
+            execution_completeness=result.execution_completeness,
         )
         return result
 

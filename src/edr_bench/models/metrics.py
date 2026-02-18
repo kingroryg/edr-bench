@@ -4,9 +4,22 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from edr_bench.models.enums import AttackType, Platform
+
+
+class StepResult(BaseModel):
+    """Result of executing a single simulation step."""
+
+    step_order: int
+    role: str
+    status: str = Field(description="'success', 'failed', 'skipped', 'timeout'")
+    error_message: str | None = None
+    duration_seconds: float = 0.0
+    ground_truth_events: int = Field(
+        default=0, description="Number of ground truth events captured for this step"
+    )
 
 
 class ScenarioResult(BaseModel):
@@ -48,6 +61,16 @@ class ScenarioResult(BaseModel):
     execution_started: datetime | None = None
     execution_finished: datetime | None = None
     errors: list[str] = Field(default_factory=list)
+    step_results: list[StepResult] = Field(default_factory=list)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def execution_completeness(self) -> float:
+        """Return the fraction of steps that succeeded."""
+        if not self.step_results:
+            return 0.0
+        succeeded = sum(1 for s in self.step_results if s.status == "success")
+        return succeeded / len(self.step_results)
 
 
 class TechniqueScore(BaseModel):

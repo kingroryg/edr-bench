@@ -3,7 +3,7 @@
 from edr_bench.models.enums import AttackType, Complexity, Platform, Role
 from edr_bench.models.finding import Finding
 from edr_bench.models.ground_truth import GroundTruthEvent
-from edr_bench.models.metrics import BenchmarkReport, ScenarioResult
+from edr_bench.models.metrics import BenchmarkReport, ScenarioResult, StepResult
 from edr_bench.models.scenario import Scenario, SimulationStep
 
 __all__ = [
@@ -17,4 +17,5 @@ __all__ = [
     "Scenario",
     "ScenarioResult",
     "SimulationStep",
+    "StepResult",
 ]

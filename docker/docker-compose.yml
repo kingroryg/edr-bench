@@ -109,6 +109,7 @@ services:
         ipv4_address: 172.28.0.10
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - mocknet-logs:/var/log/mocknet:ro
     env_file:
       - ../.env
     healthcheck:
