@@ -1,4 +1,4 @@
-# Internal infrastructure stack - Acme Corp Platform Services
+# Internal infrastructure stack - Meridian Systems Platform Services
 # Maintainer: platform-eng@internal.company.com
 # Last updated: 2026-01-20
 # WARNING: Contains production credentials. Do not commit to public repos.
@@ -39,7 +39,7 @@ services:
     environment:
       - DATABASE_URL=mongodb://prod-db.internal:27017/users
       - MONGODB_USERNAME=svc_user_rw
-      - MONGODB_PASSWORD=M0ng0_Pr0d_2026!svcAcct
+      - MONGODB_PASSWORD=Kx9mP2qL5rW8nM
       - CACHE_URL=redis://cache.internal:6379/2
       - AUTH_SERVICE_URL=http://10.0.1.20:4000/auth
       - ENCRYPTION_KEY=aes256:k8sSecretRef:user-svc-enc-key
@@ -53,14 +53,14 @@ services:
   analytics-service:
     image: registry.internal.company.com/platform/analytics:1.5.2
     environment:
-      - POSTGRES_DSN=postgresql://analytics_rw:An4lyt1cs_Pr0d!@10.0.2.30:5432/analytics
+      - POSTGRES_DSN=postgresql://analytics_rw:Vz3Bt7Rq1Lm4Xp@10.0.2.30:5432/analytics
       - CLICKHOUSE_URL=http://10.0.2.40:8123
       - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=Cl1ckH0use_2026!
+      - CLICKHOUSE_PASSWORD=Jq7Zt3vR8nM2Wk
       - KAFKA_BROKERS=10.0.2.50:9092,10.0.2.51:9092,10.0.2.52:9092
-      - S3_BUCKET=acme-analytics-prod
-      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+      - S3_BUCKET=meridian-analytics-prod
+      - AWS_ACCESS_KEY_ID=AKIA4MTWGZZ9RE8JOVTQ
+      - AWS_SECRET_ACCESS_KEY=Gq+8rLzTnPBjYXcK9J7dMfW2hN1vR6uA0eS5oI3m
     networks:
       internal:
         ipv4_address: 10.0.1.30
@@ -75,7 +75,7 @@ services:
       - "27017:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=R00tM0ng0_Pr0d_2026!
+      - MONGO_INITDB_ROOT_PASSWORD=Nm4Qz8Wt1Bp6Yx
     volumes:
       - mongo_data:/data/db
     networks:
@@ -88,7 +88,7 @@ services:
       - "5432:5432"
     environment:
       - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=P0stgr3s_Adm1n_2026!
+      - POSTGRES_PASSWORD=Hf5Lr9Kp3Wd7Ts
       - POSTGRES_DB=platform
     volumes:
       - pg_data:/var/lib/postgresql/data
@@ -98,7 +98,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--requirepass", "R3d1s_Pr0d_Auth!"]
+    command: ["redis-server", "--requirepass", "Cx2Gm6Yv0Jn4Rq"]
     ports:
       - "6379:6379"
     networks:
@@ -110,7 +110,7 @@ services:
     ports:
       - "8200:8200"
     environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=hvs.rootDevToken_N3v3rUs3InPr0d
+      - VAULT_DEV_ROOT_TOKEN_ID=hvs.LpK8mT3nR7qWxJ1cFhA6eB0zU5iS9dY4vG2oN
       - VAULT_ADDR=http://0.0.0.0:8200
     cap_add:
       - IPC_LOCK
@@ -125,7 +125,7 @@ services:
       - "9000:9000"
     environment:
       - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=Cl1ckH0use_2026!
+      - CLICKHOUSE_PASSWORD=Jq7Zt3vR8nM2Wk
     volumes:
       - ch_data:/var/lib/clickhouse
     networks:
@@ -139,7 +139,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./certs:/etc/ssl/certs/acme
+      - ./certs:/etc/ssl/certs/meridian
     networks:
       internal:
         ipv4_address: 10.0.1.5

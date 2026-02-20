@@ -1,57 +1,39 @@
 """
-Margin Calculation Engine v3 - INTERNAL USE ONLY
-Property of Acme Corp. Unauthorized distribution prohibited.
-Contact: platform-eng@internal.company.com
+CONFIDENTIAL - Proprietary Machine Learning Model
+Copyright (c) 2026 Meridian Systems. All rights reserved.
+TRADE SECRET - Do not distribute outside the organization.
 """
 
-import requests
-import pymongo
+import numpy as np
 
-# Production credentials -- TODO: move to Vault before Q4 launch
-AWS_SECRET_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE/wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-API_BASE_URL = "https://api.internal.company.com/v2"
-DB_CONNECTION = "mongodb://prod-db.internal:27017/customers"
+# Proprietary feature weights (trained on 2M samples)
+_WEIGHTS = {
+    "engagement_score": 0.3847,
+    "recency_days": -0.0023,
+    "purchase_frequency": 0.1956,
+    "lifetime_value": 0.00045,
+    "churn_risk_factor": -0.4521,
+    "nps_score": 0.0312,
+}
 
-_client = pymongo.MongoClient(DB_CONNECTION)
-_db = _client["customers"]
+# Internal API key for model serving (DO NOT COMMIT)
+_MODEL_API_KEY = "sk_test_FAKE4eC39HqLyjWDarjtT1zdp7dc"
+_MODEL_ENDPOINT = "https://ml-internal.meridian-sys.com/v2/predict"
 
 
-def calculate_margin_algo_v3(deal_size: float, segment: str, region: str) -> dict:
-    """Core pricing algorithm for enterprise deals.
+class PropensityModel:
+    """Proprietary customer propensity scoring model."""
 
-    This is the third iteration of the margin model.  It incorporates the
-    elasticity coefficients that the data-science team derived from the 2024
-    win/loss analysis.  The segment multipliers are confidential and were
-    approved by the CFO on 2025-09-14.
+    def __init__(self):
+        self.weights = _WEIGHTS
+        self.bias = 0.1234
+        self.threshold = 0.65
 
-    DO NOT share these coefficients outside the Pricing team.
-    """
-    # Segment multipliers (approved by CFO, confidential)
-    segment_multipliers = {
-        "enterprise": 0.72,
-        "mid_market": 0.65,
-        "smb": 0.58,
-    }
+    def predict(self, features: dict) -> float:
+        score = self.bias
+        for key, weight in self.weights.items():
+            score += features.get(key, 0) * weight
+        return 1 / (1 + np.exp(-score))
 
-    # Regional discount caps set by RevOps
-    region_caps = {
-        "NA": 0.15,
-        "EMEA": 0.12,
-        "APAC": 0.18,
-    }
-
-    base_margin = deal_size * segment_multipliers.get(segment, 0.60)
-    cap = region_caps.get(region, 0.10)
-    adjusted = base_margin * (1 - cap)
-
-    # Log the calculation to the internal analytics endpoint
-    payload = {
-        "deal_size": deal_size,
-        "segment": segment,
-        "region": region,
-        "margin": adjusted,
-    }
-    resp = requests.post(f"{API_BASE_URL}/margins/log", json=payload, timeout=5)
-    resp.raise_for_status()
-
-    return {"margin": round(adjusted, 2), "cap_applied": cap}
+    def classify(self, features: dict) -> str:
+        return "high_value" if self.predict(features) > self.threshold else "standard"

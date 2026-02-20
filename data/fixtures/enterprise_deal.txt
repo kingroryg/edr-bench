@@ -1,10 +1,10 @@
 ================================================================================
                      CONFIDENTIAL - SALES INTELLIGENCE
-                   Enterprise Platform License - Acme Corp
+                   Enterprise Platform License - Meridian Systems
 ================================================================================
 
 Deal ID:            OPP-2026-4891
-Salesforce Link:    https://acme.my.salesforce.com/0063X00000AbCdE
+Salesforce Link:    https://meridian.my.salesforce.com/0063X00000AbCdE
 Account Executive:  Marcus Thompson (marcus.thompson@ourcompany.com)
 Sales Engineer:     Priya Rajesh (priya.rajesh@ourcompany.com)
 Deal Stage:         Negotiation / Final Proposal
@@ -20,11 +20,11 @@ Proposed Amount:    $2,300,000 ($766,667 annual)
 Payment Terms:      Annual upfront, net-30
 Seats:              2,500 named users + unlimited read-only
 
-Customer:           Acme Corp
+Customer:           Meridian Systems
 Industry:           Financial Services
 HQ:                 New York, NY
 Employees:          ~12,000
-Annual Revenue:     $4.2B (public company, NYSE: ACME)
+Annual Revenue:     $4.2B (public company, NYSE: MRDN)
 
 --------------------------------------------------------------------------------
 COMPETITIVE INTELLIGENCE
@@ -64,23 +64,23 @@ KEY CONTACTS AND DECISION MAKERS
 --------------------------------------------------------------------------------
 
 Economic Buyer:     Robert Langston, CFO
-                    robert.langston@acmecorp.com | (555) 800-1001
+                    robert.langston@meridian-sys.com | (312) 800-1001
                     Notes: Data-driven, wants TCO analysis vs. build-vs-buy.
 
 Technical Buyer:    Sandra Kim, VP of Engineering
-                    sandra.kim@acmecorp.com | (555) 800-1002
+                    sandra.kim@meridian-sys.com | (617) 924-7103
                     Notes: Likes our API; concerned about migration timeline.
 
 Champion:           Derek Patel, Director of Platform Engineering
-                    derek.patel@acmecorp.com | (555) 800-1003
+                    derek.patel@meridian-sys.com | (415) 632-8847
                     Notes: Internal advocate. Wants us to win. Provided budget info.
 
 Blocker:            Janet Morris, Procurement Lead
-                    janet.morris@acmecorp.com | (555) 800-1004
+                    janet.morris@meridian-sys.com | (212) 498-3306
                     Notes: Focused on contract terms; will push for SLA penalties.
 
 Legal Contact:      Howard Grant, Associate General Counsel
-                    howard.grant@acmecorp.com | (555) 800-1005
+                    howard.grant@meridian-sys.com | (312) 771-2054
                     Notes: Standard redlines expected on liability caps and IP.
 
 --------------------------------------------------------------------------------

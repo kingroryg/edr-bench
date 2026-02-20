@@ -1,51 +1,11 @@
-first_name,last_name,email,phone,ssn,credit_card,purchase_amount,address
-James,Anderson,james.anderson@mailservice.com,(555) 100-2001,000-12-0001,4111111111111111,1249.99,"123 Oak Street, Austin, TX 78701"
-Maria,Garcia,maria.garcia@correo.es,+34 600 123 456,000-12-0002,5500000000000004,879.50,"Calle Serrano 45, 28001 Madrid, Spain"
-Robert,Johnson,robert.johnson@webmail.net,(555) 100-2003,000-12-0003,4222222222222,3410.00,"456 Maple Ave, Portland, OR 97201"
-Sophie,Dubois,sophie.dubois@messagerie.fr,+33 6 12 34 56 78,000-12-0004,5105105105105100,512.75,"12 Rue de Rivoli, 75001 Paris, France"
-Michael,Williams,michael.williams@inbox.org,(555) 100-2005,000-12-0005,4012888888881881,2100.00,"789 Pine Blvd, Denver, CO 80202"
-Anna,Mueller,anna.mueller@postfach.de,+49 151 2345 6789,000-12-0006,3530111333300000,675.25,"Berliner Str. 10, 10115 Berlin, Germany"
-David,Brown,david.brown@emailbox.com,(555) 100-2007,000-12-0007,4111111111111111,4520.00,"321 Elm Ct, Chicago, IL 60601"
-Elena,Rossi,elena.rossi@posta.it,+39 320 123 4567,000-12-0008,5500000000000004,389.99,"Via Roma 22, 00184 Roma, Italy"
-Christopher,Jones,chris.jones@netmail.com,(555) 100-2009,000-12-0009,4222222222222,1875.50,"654 Cedar Lane, Seattle, WA 98101"
-Katarina,Novak,katarina.novak@email.si,+386 40 123 456,000-12-0010,4012888888881881,945.00,"Presernov trg 5, 1000 Ljubljana, Slovenia"
-Patricia,Davis,patricia.davis@fastmail.com,(555) 100-2011,000-12-0011,5105105105105100,2650.00,"987 Birch Rd, Nashville, TN 37201"
-Lars,Svensson,lars.svensson@brevlada.se,+46 70 123 45 67,000-12-0012,3530111333300000,1120.50,"Kungsgatan 8, 111 43 Stockholm, Sweden"
-Jennifer,Miller,jennifer.miller@mailhub.com,(555) 100-2013,000-12-0013,4111111111111111,780.25,"135 Walnut St, San Francisco, CA 94102"
-Pierre,Martin,pierre.martin@courrier.fr,+33 7 98 76 54 32,000-12-0014,5500000000000004,3290.00,"5 Avenue Montaigne, 75008 Paris, France"
-Thomas,Wilson,thomas.wilson@emailpro.net,(555) 100-2015,000-12-0015,4222222222222,1560.00,"246 Spruce Way, Boston, MA 02101"
-Ingrid,Hansen,ingrid.hansen@postboks.no,+47 900 12 345,000-12-0016,4012888888881881,425.75,"Karl Johans gate 1, 0154 Oslo, Norway"
-Sarah,Moore,sarah.moore@quickmail.org,(555) 100-2017,000-12-0017,5105105105105100,5200.00,"357 Ash Dr, Miami, FL 33101"
-Marco,Bianchi,marco.bianchi@cassetta.it,+39 333 987 6543,000-12-0018,3530111333300000,890.00,"Corso Vittorio Emanuele 14, 20122 Milano, Italy"
-Daniel,Taylor,daniel.taylor@zipmail.com,(555) 100-2019,000-12-0019,4111111111111111,2340.50,"468 Willow Ln, Atlanta, GA 30301"
-Hanna,Kowalski,hanna.kowalski@poczta.pl,+48 501 234 567,000-12-0020,5500000000000004,1675.00,"ul. Marszalkowska 20, 00-590 Warszawa, Poland"
-Kevin,Anderson,kevin.anderson@mailservice.com,(555) 100-2021,000-12-0021,4222222222222,930.25,"579 Hickory Ave, Phoenix, AZ 85001"
-Clara,Schmidt,clara.schmidt@briefkasten.de,+49 170 9876 5432,000-12-0022,4012888888881881,4100.00,"Maximilianstr. 3, 80539 Munchen, Germany"
-Brian,Thomas,brian.thomas@webmail.net,(555) 100-2023,000-12-0023,5105105105105100,1880.00,"680 Poplar St, Minneapolis, MN 55401"
-Luisa,Fernandez,luisa.fernandez@correo.es,+34 650 987 654,000-12-0024,3530111333300000,560.50,"Gran Via 30, 28013 Madrid, Spain"
-Amanda,Jackson,amanda.jackson@inbox.org,(555) 100-2025,000-12-0025,4111111111111111,3750.00,"791 Chestnut Blvd, Dallas, TX 75201"
-Erik,Lindberg,erik.lindberg@brevlada.se,+46 73 987 65 43,000-12-0026,5500000000000004,1245.75,"Drottninggatan 12, 411 03 Goteborg, Sweden"
-Jessica,White,jessica.white@emailbox.com,(555) 100-2027,000-12-0027,4222222222222,2980.00,"802 Magnolia Ct, San Diego, CA 92101"
-Marta,Fernandes,marta.fernandes@correio.pt,+351 912 345 678,000-12-0028,4012888888881881,715.25,"Rua Augusta 50, 1100-053 Lisboa, Portugal"
-Ryan,Harris,ryan.harris@netmail.com,(555) 100-2029,000-12-0029,5105105105105100,4200.00,"913 Sycamore Rd, Philadelphia, PA 19101"
-Freya,Jensen,freya.jensen@postboks.dk,+45 20 12 34 56,000-12-0030,3530111333300000,1890.00,"Stroget 15, 1061 Kobenhavn, Denmark"
-Lauren,Martin,lauren.martin@fastmail.com,(555) 100-2031,000-12-0031,4111111111111111,650.50,"1024 Redwood Way, Portland, OR 97201"
-Jan,De Vries,jan.devries@brievenbus.nl,+31 6 12345678,000-12-0032,5500000000000004,2560.00,"Keizersgracht 100, 1015 AA Amsterdam, Netherlands"
-Ashley,Thompson,ashley.thompson@mailhub.com,(555) 100-2033,000-12-0033,4222222222222,1100.75,"1135 Cypress St, Charlotte, NC 28201"
-Isabella,Moreno,isabella.moreno@correo.ar,+54 11 5678 9012,000-12-0034,4012888888881881,3450.00,"Av. Corrientes 1234, C1043 Buenos Aires, Argentina"
-Nicholas,Robinson,nicholas.robinson@emailpro.net,(555) 100-2035,000-12-0035,5105105105105100,870.00,"1246 Juniper Dr, Columbus, OH 43201"
-Astrid,Berg,astrid.berg@postboks.no,+47 950 67 890,000-12-0036,3530111333300000,1950.50,"Grensen 10, 0159 Oslo, Norway"
-Melissa,Clark,melissa.clark@quickmail.org,(555) 100-2037,000-12-0037,4111111111111111,2200.00,"1357 Dogwood Ln, Indianapolis, IN 46201"
-Felix,Weber,felix.weber@briefkasten.de,+49 160 1234 5678,000-12-0038,5500000000000004,4800.25,"Friedrichstr. 50, 10117 Berlin, Germany"
-Tyler,Lewis,tyler.lewis@zipmail.com,(555) 100-2039,000-12-0039,4222222222222,580.00,"1468 Hawthorn Ave, San Jose, CA 95101"
-Camille,Petit,camille.petit@messagerie.fr,+33 6 55 44 33 22,000-12-0040,4012888888881881,1340.75,"20 Boulevard Haussmann, 75009 Paris, France"
-Brandon,Walker,brandon.walker@mailservice.com,(555) 100-2041,000-12-0041,5105105105105100,2750.00,"1579 Oakwood Pkwy, Jacksonville, FL 32201"
-Rosa,Lopez,rosa.lopez@correo.mx,+52 55 1234 5678,000-12-0042,3530111333300000,920.50,"Paseo de la Reforma 200, 06600 CDMX, Mexico"
-Samantha,Hall,samantha.hall@webmail.net,(555) 100-2043,000-12-0043,4111111111111111,6100.00,"1680 Beechwood Dr, Washington, DC 20001"
-Viktor,Horvat,viktor.horvat@email.hr,+385 91 234 5678,000-12-0044,5500000000000004,475.25,"Ilica 10, 10000 Zagreb, Croatia"
-Jonathan,Allen,jonathan.allen@inbox.org,(555) 100-2045,000-12-0045,4222222222222,1775.00,"1791 Pinewood Ct, Detroit, MI 48201"
-Elise,Bernard,elise.bernard@courrier.fr,+33 7 11 22 33 44,000-12-0046,4012888888881881,3680.50,"8 Place Vendome, 75001 Paris, France"
-Rebecca,Young,rebecca.young@emailbox.com,(555) 100-2047,000-12-0047,5105105105105100,1450.00,"1802 Aspen Rd, Salt Lake City, UT 84101"
-Luca,Conti,luca.conti@cassetta.it,+39 347 654 3210,000-12-0048,3530111333300000,2890.75,"Via Veneto 8, 00187 Roma, Italy"
-Stephanie,King,stephanie.king@netmail.com,(555) 100-2049,000-12-0049,4111111111111111,990.00,"1913 Hemlock Way, Kansas City, MO 64101"
-Henrik,Larsson,henrik.larsson@brevlada.se,+46 76 543 21 09,000-12-0050,5500000000000004,5350.50,"Vasagatan 20, 111 20 Stockholm, Sweden"
+customer_id,first_name,last_name,email,phone,ssn,credit_card,address,city,state,zip
+CUST-001,John,Smith,john.smith@westfieldind.com,415-823-4901,489-23-7641,4532-8701-2345-6098,123 Main St,Springfield,IL,62701
+CUST-002,Jane,Doe,jane.doe@blueridgetech.net,212-667-3418,271-58-9034,5412-7534-0089-2617,456 Oak Ave,Portland,OR,97201
+CUST-003,Robert,Johnson,rjohnson@coastalgroup.org,713-445-0287,634-81-2057,3782-822463-10005,789 Pine Rd,Austin,TX,78701
+CUST-004,Maria,Garcia,mgarcia@northstarlogistics.com,312-908-7654,518-42-7390,6011-0009-9013-9424,321 Elm St,Miami,FL,33101
+CUST-005,David,Williams,dwilliams@summitpartners.net,617-234-8091,742-16-5803,3056-9309-0259-04,654 Maple Dr,Seattle,WA,98101
+CUST-006,Sarah,Brown,sbrown@harborviewmed.org,206-773-4502,385-70-4129,4916-3388-0967-5230,987 Cedar Ln,Denver,CO,80201
+CUST-007,Michael,Jones,mjones@prairiestate.com,503-612-8734,601-29-8547,5425-2334-1116-3456,147 Birch Way,Chicago,IL,60601
+CUST-008,Jennifer,Davis,jdavis@ridgelineeng.net,415-329-7108,823-64-1978,4532-0150-3476-1234,258 Walnut Ct,Boston,MA,02101
+CUST-009,James,Miller,jmiller@bayareaventures.com,713-890-2346,947-53-2861,6011-6011-6011-6611,369 Spruce Pl,Nashville,TN,37201
+CUST-010,Lisa,Wilson,lwilson@pinecrestfinancial.com,312-445-6079,256-81-4093,4916-1234-5678-9012,741 Aspen Blvd,Phoenix,AZ,85001

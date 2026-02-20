@@ -1,10 +1,10 @@
-# Acme Corp Platform - Production Environment Configuration
+# Meridian Systems Platform - Production Environment Configuration
 # Deployed via: Ansible playbook deploy-platform.yml
 # Last rotation: 2026-01-20
 
 # AWS Credentials
-AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+AWS_ACCESS_KEY_ID=AKIA4MTWGZZ9RE8JOVTQ
+AWS_SECRET_ACCESS_KEY=Gq+8rLzTnPBjYXcK9J7dMfW2hN1vR6uA0eS5oI3m
 AWS_DEFAULT_REGION=us-east-1
 AWS_ACCOUNT_ID=123456789012
 
@@ -21,19 +21,19 @@ REDIS_URL=redis://:authpass@cache.internal:6379
 REDIS_POOL_SIZE=10
 
 # Stripe Payment Processing
-STRIPE_PUBLISHABLE_KEY=pk_test_FAKE51ABC123DEF456GHI789JKL
-STRIPE_SECRET_KEY=sk_test_FAKE51ABC123DEF456GHI789JKL012MNO345PQR678
+STRIPE_PUBLISHABLE_KEY=sk_test_FAKE51HGr8kLqW4xN7mJ2pRT9bFhA6eY0zU5iS3dK
+STRIPE_SECRET_KEY=sk_test_FAKE51HGr8kM9pNdL4qJ7xBwT2cFhA6eY0zU5iR8oS
 STRIPE_WEBHOOK_SECRET=whsec_AbCdEfGhIjKlMnOpQrStUvWxYz012345
 
 # Auth and Session
-JWT_SECRET=super-secret-jwt-key-do-not-share
+JWT_SECRET=k8Qm2Pz9WxJt4Nv7RhBf1Lg6YcAe0Ui3SoD5
 JWT_EXPIRY=3600
 SESSION_SECRET=s3ss10n_s3cr3t_k3y_pr0d_2026
-COOKIE_DOMAIN=.acmeplatform.com
+COOKIE_DOMAIN=.meridian-sys.com
 
 # Email (SendGrid)
 SENDGRID_API_KEY=SG.AbCdEfGhIjKlMnOpQrStUv.WxYz0123456789AbCdEfGhIjKlMnOpQrStUvWxYz
-EMAIL_FROM=noreply@acmeplatform.com
+EMAIL_FROM=noreply@meridian-sys.com
 
 # Vault
 VAULT_ADDR=https://vault.internal.company.com:8200
@@ -55,10 +55,10 @@ NOTIFICATION_SERVICE_URL=http://10.0.1.40:6000
 
 # Encryption
 ENCRYPTION_KEY=aes-256-gcm:k3y_m4t3r14l_pr0d_2026_d0_n0t_sh4r3
-ENCRYPTION_IV_PREFIX=acme-prod-
+ENCRYPTION_IV_PREFIX=meridian-prod-
 
 # Application
 APP_ENV=production
 APP_PORT=3000
 APP_LOG_LEVEL=info
-CORS_ORIGINS=https://app.acmeplatform.com,https://admin.acmeplatform.com
+CORS_ORIGINS=https://app.meridian-sys.com,https://admin.meridian-sys.com
