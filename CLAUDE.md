@@ -49,6 +49,11 @@ make lint          # ruff + mypy
 - External IPs (203.0.113.x, 192.168.1.x) are iptables-DNAT'd to mocknet inside victim-linux
 - All DNS queries are redirected to dnsmasq for logging
 - The `Role` enum determines execution: `cli` = docker exec, `ui` = VNC + AI agent
+- Fictional company name is "Meridian Systems" (domain: meridian-sys.com) -- used in all fixtures and scenarios
+- LIN-CLI C2 domain is `cdn-update.s3.amazonaws.com` (resolved to mocknet via dnsmasq)
+- `internal-api.meridian-sys.com` is the mock internal API (also resolved to mocknet)
+- Fixture files must look realistic -- no `FAKE`, `EXAMPLE`, `555-0xxx`, `@example.com`, or test credit card numbers
+- Stripe-like keys in fixtures must use `sk_test_FAKE` prefix to pass GitHub push protection
 
 ## Important files to know
 
