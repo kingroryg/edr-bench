@@ -3,7 +3,7 @@
               Senior Engineering Manager / Technical Leader
 ================================================================================
 
-Contact:    jane.developer@personalmail.com | (555) 987-6543
+Contact:    jane.developer@personalmail.com | (415) 987-6543
 LinkedIn:   linkedin.com/in/janedeveloper
 Location:   San Francisco, CA
 GitHub:     github.com/janedev (personal projects only)
@@ -21,7 +21,7 @@ engineering, and building engineering cultures that ship reliably.
 EXPERIENCE
 ================================================================================
 
-ACME CORP | San Francisco, CA
+MERIDIAN SYSTEMS | San Francisco, CA
 Senior Engineering Manager, Platform Division
 March 2023 - Present
 
@@ -132,7 +132,7 @@ CERTIFICATIONS AND AWARDS
 
   - AWS Solutions Architect Professional (2024)
   - Certified Kubernetes Administrator (CKA, 2023)
-  - Acme Corp President's Club Award (2025) - Top 5% engineering leaders
+  - Meridian Systems President's Club Award (2025) - Top 5% engineering leaders
   - TechVentures "Builder Award" (2022) - For API platform delivery
 
 ================================================================================

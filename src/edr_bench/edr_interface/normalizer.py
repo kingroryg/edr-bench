@@ -26,6 +26,13 @@ _SEVERITY_MAP: dict[str, Severity] = {
     "3": Severity.MEDIUM if hasattr(Severity, "MEDIUM") else Severity("medium"),
     "4": Severity.HIGH if hasattr(Severity, "HIGH") else Severity("high"),
     "5": Severity.CRITICAL if hasattr(Severity, "CRITICAL") else Severity("critical"),
+    # Falco priorities
+    "emergency": Severity.CRITICAL,
+    "alert": Severity.CRITICAL,
+    "error": Severity.HIGH,
+    "warning": Severity.MEDIUM,
+    "notice": Severity.LOW,
+    "debug": Severity.INFO,
 }
 
 # Common field name aliases across EDR vendors.
@@ -33,22 +40,28 @@ _FIELD_ALIASES: dict[str, list[str]] = {
     "rule_name": [
         "rule_name", "ruleName", "detection_name", "DetectName",
         "title", "alert_name", "threatName", "ThreatName",
+        "rule.description",  # Wazuh
+        "rule",  # Falco
     ],
     "severity": [
         "severity", "Severity", "priority", "risk_level",
         "SeverityName", "alert_severity",
+        "rule.level",  # Wazuh (0-15 numeric)
     ],
     "description": [
         "description", "Description", "message", "summary",
         "DetectDescription", "alert_description",
+        "output",  # Falco
     ],
     "mitre_technique_id": [
         "mitre_technique_id", "technique_id", "MitreTechniqueId",
         "tactic_id", "Tactic", "attack_technique",
+        "rule.mitre.id",  # Wazuh
     ],
     "process_name": [
         "process_name", "processName", "ImageFileName",
         "ParentImageFileName", "process", "comm",
+        "proc.name",  # Falco
     ],
     "process_pid": [
         "process_pid", "pid", "ProcessId", "TargetProcessId",
@@ -56,14 +69,19 @@ _FIELD_ALIASES: dict[str, list[str]] = {
     "command_line": [
         "command_line", "commandLine", "CommandLine", "cmdline",
         "process_command_line",
+        "data.command",  # Wazuh
+        "proc.cmdline",  # Falco
     ],
     "file_path": [
         "file_path", "filePath", "FilePath", "TargetFilename",
         "file_name", "path",
+        "syscheck.path",  # Wazuh
+        "fd.name",  # Falco
     ],
     "network_dst": [
         "network_dst", "RemoteAddressIP4", "dst_ip", "dest_ip",
         "remote_ip", "RemoteIP",
+        "data.dstip",  # Wazuh
     ],
     "network_port": [
         "network_port", "RemotePort", "dst_port", "dest_port",
@@ -80,6 +98,7 @@ _FIELD_ALIASES: dict[str, list[str]] = {
     "source_container": [
         "source_container", "container_id", "ContainerId",
         "container_name",
+        "container.id",  # Falco
     ],
 }
 
@@ -185,7 +204,11 @@ class FindingNormalizer:
             return value
         if isinstance(value, (int, float)):
             if value > 1e15:
+                # Nanosecond epoch (e.g. Falco, some cloud APIs)
                 value = value / 1e9
+            elif value > 1e12:
+                # Millisecond epoch (e.g. CrowdStrike, Wazuh)
+                value = value / 1e3
             return datetime.fromtimestamp(value, tz=timezone.utc)
         if isinstance(value, str):
             try:
@@ -199,12 +222,18 @@ class FindingNormalizer:
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
-            return value.lower() in {"true", "1", "yes", "blocked", "prevented"}
+            return value.lower() in {
+                "true", "1", "yes", "blocked", "prevented",
+                "dropped", "denied", "quarantined", "killed",
+            }
         if isinstance(value, (int, float)):
             return bool(value)
         # CrowdStrike PatternDispositionFlags
         if isinstance(value, dict):
-            return bool(value.get("Kill") or value.get("Quarantine"))
+            return bool(
+                value.get("Kill") or value.get("Quarantine")
+                or value.get("ProcessBlocked") or value.get("OperationBlocked")
+            )
         return False
 
     @staticmethod

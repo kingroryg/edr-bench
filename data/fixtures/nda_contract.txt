@@ -6,9 +6,9 @@
 This Mutual Non-Disclosure Agreement ("Agreement") is entered into as of
 February 1, 2026 (the "Effective Date"), by and between:
 
-    ACME CORP, a Delaware corporation, with its principal place of business
+    MERIDIAN SYSTEMS, a Delaware corporation, with its principal place of business
     at 400 Technology Drive, Suite 300, San Francisco, CA 94105
-    ("Acme" or "Disclosing Party"),
+    ("Meridian" or "Disclosing Party"),
 
     and
 
@@ -182,7 +182,7 @@ jurisdiction of the state and federal courts located in Wilmington, Delaware.
 IN WITNESS WHEREOF, the Parties have executed this Agreement as of the
 Effective Date.
 
-ACME CORP                              TECHVENTURES LLC
+MERIDIAN SYSTEMS                              TECHVENTURES LLC
 
 By: _________________________          By: _________________________
 Name: Jonathan Mercer                  Name: Victoria Ashworth

@@ -1,4 +1,4 @@
-# Acme Corp Infrastructure - Main Configuration
+# Meridian Systems Infrastructure - Main Configuration
 # Maintainer: platform-eng@internal.company.com
 #
 # WARNING: This configuration contains intentional security misconfigurations
@@ -16,7 +16,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "acme-terraform-state"
+    bucket         = "meridian-terraform-state"
     key            = "prod/main.tfstate"
     region         = "us-east-1"
     dynamodb_table = "terraform-locks"
@@ -53,7 +53,7 @@ variable "db_password" {
 # This was originally set up for a static website but the bucket also
 # contains internal reports that were accidentally uploaded.
 resource "aws_s3_bucket" "data_export" {
-  bucket = "acme-data-export-prod"
+  bucket = "meridian-data-export-prod"
 
   tags = {
     Name    = "Data Export Bucket"
@@ -76,7 +76,7 @@ resource "aws_s3_bucket_versioning" "data_export_versioning" {
 
 # A second bucket configured correctly for comparison
 resource "aws_s3_bucket" "application_logs" {
-  bucket = "acme-application-logs-prod"
+  bucket = "meridian-application-logs-prod"
 
   tags = {
     Name    = "Application Logs"
@@ -113,7 +113,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "acme-prod-vpc"
+    Name = "meridian-prod-vpc"
   }
 }
 
@@ -123,7 +123,7 @@ resource "aws_subnet" "public_a" {
   availability_zone = "${var.aws_region}a"
 
   tags = {
-    Name = "acme-prod-public-a"
+    Name = "meridian-prod-public-a"
     Tier = "public"
   }
 }
@@ -134,7 +134,7 @@ resource "aws_subnet" "private_a" {
   availability_zone = "${var.aws_region}a"
 
   tags = {
-    Name = "acme-prod-private-a"
+    Name = "meridian-prod-private-a"
     Tier = "private"
   }
 }
@@ -143,7 +143,7 @@ resource "aws_subnet" "private_a" {
 # This was added as a temporary measure during an incident and was never
 # reverted. It should be restricted to the VPN CIDR (10.100.0.0/16).
 resource "aws_security_group" "bastion" {
-  name        = "acme-bastion-sg"
+  name        = "meridian-bastion-sg"
   description = "Security group for bastion host"
   vpc_id      = aws_vpc.main.id
 
@@ -165,13 +165,13 @@ resource "aws_security_group" "bastion" {
   }
 
   tags = {
-    Name = "acme-bastion-sg"
+    Name = "meridian-bastion-sg"
   }
 }
 
 # A properly configured security group for the application tier
 resource "aws_security_group" "application" {
-  name        = "acme-application-sg"
+  name        = "meridian-application-sg"
   description = "Security group for application servers"
   vpc_id      = aws_vpc.main.id
 
@@ -200,7 +200,7 @@ resource "aws_security_group" "application" {
   }
 
   tags = {
-    Name = "acme-application-sg"
+    Name = "meridian-application-sg"
   }
 }
 
@@ -208,7 +208,7 @@ resource "aws_security_group" "application" {
 # Data at rest is stored in plaintext on the underlying EBS volumes.
 # This violates the company's data protection policy and SOC2 requirements.
 resource "aws_db_instance" "main" {
-  identifier     = "acme-prod-db"
+  identifier     = "meridian-prod-db"
   engine         = "postgres"
   engine_version = "16.1"
   instance_class = "db.r6g.xlarge"
@@ -234,24 +234,24 @@ resource "aws_db_instance" "main" {
   deletion_protection = true
   skip_final_snapshot = false
 
-  final_snapshot_identifier = "acme-prod-db-final-snapshot"
+  final_snapshot_identifier = "meridian-prod-db-final-snapshot"
 
   tags = {
-    Name = "acme-prod-database"
+    Name = "meridian-prod-database"
   }
 }
 
 resource "aws_db_subnet_group" "main" {
-  name       = "acme-prod-db-subnet-group"
+  name       = "meridian-prod-db-subnet-group"
   subnet_ids = [aws_subnet.private_a.id]
 
   tags = {
-    Name = "acme-prod-db-subnet-group"
+    Name = "meridian-prod-db-subnet-group"
   }
 }
 
 resource "aws_security_group" "database" {
-  name        = "acme-database-sg"
+  name        = "meridian-database-sg"
   description = "Security group for RDS database"
   vpc_id      = aws_vpc.main.id
 
@@ -271,7 +271,7 @@ resource "aws_security_group" "database" {
   }
 
   tags = {
-    Name = "acme-database-sg"
+    Name = "meridian-database-sg"
   }
 }
 

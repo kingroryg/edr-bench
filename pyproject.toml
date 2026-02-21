@@ -25,6 +25,8 @@ dependencies = [
     "tenacity>=8.0",
     "mitmproxy>=10.0",
     "pillow>=10.0",
+    "numpy>=1.26",
+    "scipy>=1.12",
 ]
 
 [project.optional-dependencies]

@@ -5,7 +5,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Sequence
 
+import numpy as np
 import structlog
+from scipy.optimize import linear_sum_assignment
 
 from edr_bench.models.finding import Finding
 from edr_bench.models.ground_truth import GroundTruthEvent
@@ -73,16 +75,20 @@ class CorrelationResult:
 
 
 class GroundTruthCorrelator:
-    """Match ground truth events to EDR findings using temporal and attribute overlap.
+    """Match ground truth events to EDR findings using optimal assignment.
 
-    The correlator uses a greedy best-match algorithm:
+    Uses the Hungarian algorithm (scipy ``linear_sum_assignment``) to find
+    the globally optimal one-to-one matching between ground truth events
+    and EDR findings, maximising total overlap score.
 
-    1. For each ``(gt, finding)`` pair within the time window, compute
-       an overlap score.
-    2. Sort candidate pairs by descending score.
-    3. Greedily assign the best-scoring pairs first, ensuring each
-       ground truth event and each finding is matched at most once.
+    For each ``(gt, finding)`` pair, a score in ``[0, 1]`` is computed
+    from temporal proximity and attribute overlap.  Pairs outside the
+    time window or with zero attribute overlap receive a score of 0 and
+    are never matched.
     """
+
+    # Minimum score a pair must reach to be considered a valid match.
+    _MATCH_THRESHOLD = 0.05
 
     def __init__(self, window_seconds: float = 30.0) -> None:
         self._window_seconds = window_seconds
@@ -104,28 +110,28 @@ class GroundTruthCorrelator:
                 unmatched_findings=list(findings),
             )
 
-        # Build all candidate pairs with scores
-        candidates: list[tuple[float, int, int]] = []  # (score, gt_idx, f_idx)
+        n_gt = len(ground_truth)
+        n_f = len(findings)
 
+        # Build the score matrix (rows = GT events, cols = findings).
+        score_matrix = np.zeros((n_gt, n_f), dtype=np.float64)
         for gi, gt in enumerate(ground_truth):
             for fi, finding in enumerate(findings):
-                score = self._score_pair(gt, finding)
-                if score > 0.0:
-                    candidates.append((score, gi, fi))
+                score_matrix[gi, fi] = self._score_pair(gt, finding)
 
-        # Sort descending by score (greedy best-match)
-        candidates.sort(key=lambda c: c[0], reverse=True)
+        # Hungarian algorithm minimises cost, so we negate the scores.
+        cost_matrix = -score_matrix
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
         matched_gt_indices: set[int] = set()
         matched_f_indices: set[int] = set()
         matched_pairs: list[tuple[GroundTruthEvent, Finding]] = []
 
-        for score, gi, fi in candidates:
-            if gi in matched_gt_indices or fi in matched_f_indices:
-                continue
-            matched_gt_indices.add(gi)
-            matched_f_indices.add(fi)
-            matched_pairs.append((ground_truth[gi], findings[fi]))
+        for gi, fi in zip(row_ind, col_ind):
+            if score_matrix[gi, fi] >= self._MATCH_THRESHOLD:
+                matched_gt_indices.add(int(gi))
+                matched_f_indices.add(int(fi))
+                matched_pairs.append((ground_truth[gi], findings[fi]))
 
         unmatched_gt = [
             gt for i, gt in enumerate(ground_truth) if i not in matched_gt_indices

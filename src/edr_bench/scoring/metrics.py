@@ -1,7 +1,9 @@
 """Individual metric calculator functions for EDR scoring."""
 from __future__ import annotations
 
-from edr_bench.models.finding import Finding
+import numpy as np
+
+from edr_bench.models.finding import Finding, Severity
 from edr_bench.models.ground_truth import GroundTruthEvent
 
 
@@ -59,12 +61,21 @@ def calc_contextual_accuracy(
                     # Same parent technique (e.g. T1059.001 vs T1059.003)
                     pair_score += 0.5
 
-        # Severity appropriateness: any non-null severity gets partial credit
+        # Severity appropriateness: score based on how reasonable the severity is.
+        # Security-relevant events should be medium+ severity.
         checks += 1
         if finding.severity is not None:
-            pair_score += 0.8  # Having a severity at all is good
+            sev = finding.severity
+            if sev in (Severity.HIGH, Severity.CRITICAL):
+                pair_score += 1.0
+            elif sev == Severity.MEDIUM:
+                pair_score += 0.7
+            elif sev == Severity.LOW:
+                pair_score += 0.4
+            else:
+                pair_score += 0.2  # INFO
         else:
-            pair_score += 0.2
+            pair_score += 0.0
 
         # Process / command enrichment
         if gt.process_name or gt.command_line:
@@ -95,7 +106,31 @@ def calc_time_to_detect(
         delta = abs((finding.timestamp - gt.timestamp).total_seconds())
         deltas.append(delta)
 
-    return sum(deltas) / len(deltas)
+    return float(np.mean(deltas))
+
+
+def calc_time_to_detect_percentiles(
+    matched_pairs: list[tuple[GroundTruthEvent, Finding]],
+) -> dict[str, float] | None:
+    """Calculate TTD percentiles (p50, p90, p95, max) in seconds.
+
+    Returns ``None`` when there are no matched pairs.
+    """
+    if not matched_pairs:
+        return None
+
+    deltas = np.array([
+        abs((finding.timestamp - gt.timestamp).total_seconds())
+        for gt, finding in matched_pairs
+    ])
+
+    return {
+        "mean": float(np.mean(deltas)),
+        "p50": float(np.percentile(deltas, 50)),
+        "p90": float(np.percentile(deltas, 90)),
+        "p95": float(np.percentile(deltas, 95)),
+        "max": float(np.max(deltas)),
+    }
 
 
 def calc_blocking_efficacy(

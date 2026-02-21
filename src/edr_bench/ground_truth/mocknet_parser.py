@@ -42,6 +42,11 @@ _DESTINATION_TYPES: dict[str, str] = {
     "phishing.example.com": "phishing",
     "mail.company.com": "corporate_email",
     "app.company.com": "corporate_portal",
+    "cdn-update.s3.amazonaws.com": "c2_endpoint",
+    "internal-api.meridian-sys.com": "corporate_api",
+    "registry.npmjs.org": "package_registry",
+    "pypi.org": "package_registry",
+    "files.pythonhosted.org": "package_registry",
 }
 
 # Keywords that indicate sensitive content

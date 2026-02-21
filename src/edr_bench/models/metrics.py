@@ -21,6 +21,19 @@ class StepResult(BaseModel):
         default=0, description="Number of ground truth events captured for this step"
     )
 
+    # Step context (populated from scenario definition)
+    command: str | None = Field(default=None, description="Command executed in this step")
+    description: str | None = Field(default=None, description="Human-readable step description")
+    expected_artifact: str | None = Field(default=None, description="Expected outcome of step")
+
+    # Per-step EDR detection attribution (populated after correlation)
+    detected: bool = Field(default=False, description="Whether the EDR detected this step")
+    matched_finding_count: int = Field(default=0, description="Number of EDR findings matched to this step")
+    finding_summaries: list[str] = Field(
+        default_factory=list,
+        description="Short descriptions of EDR findings that matched this step",
+    )
+
 
 class ScenarioResult(BaseModel):
     """Results for a single scenario execution."""
@@ -43,6 +56,10 @@ class ScenarioResult(BaseModel):
         default=None,
         ge=0.0,
         description="Average seconds between ground truth event and EDR finding",
+    )
+    time_to_detect_percentiles: dict[str, float] | None = Field(
+        default=None,
+        description="TTD percentiles: mean, p50, p90, p95, max (in seconds)",
     )
     blocking_efficacy: float = Field(
         ge=0.0, le=1.0,
@@ -69,14 +86,22 @@ class ScenarioResult(BaseModel):
     errors: list[str] = Field(default_factory=list)
     step_results: list[StepResult] = Field(default_factory=list)
 
+    attack_chain_coverage: float | None = Field(
+        default=None,
+        description="Fraction of executed steps where the EDR detected at least one event",
+    )
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def execution_completeness(self) -> float:
-        """Return the fraction of steps that succeeded."""
+        """Return the fraction of non-skipped steps that succeeded."""
         if not self.step_results:
             return 0.0
-        succeeded = sum(1 for s in self.step_results if s.status == "success")
-        return succeeded / len(self.step_results)
+        non_skipped = [s for s in self.step_results if s.status != "skipped"]
+        if not non_skipped:
+            return 0.0
+        succeeded = sum(1 for s in non_skipped if s.status == "success")
+        return succeeded / len(non_skipped)
 
 
 class TechniqueScore(BaseModel):

@@ -4,7 +4,7 @@
   "employee": {
     "id": "EMP-10847",
     "name": "Jordan Mitchell",
-    "email": "jordan.mitchell@acmecorp.com",
+    "email": "jordan.mitchell@meridian-sys.com",
     "department": "Engineering",
     "title": "Senior Software Engineer",
     "manager": "Sarah Chen",
@@ -14,7 +14,7 @@
   "reviewer": {
     "id": "EMP-10201",
     "name": "Sarah Chen",
-    "email": "sarah.chen@acmecorp.com",
+    "email": "sarah.chen@meridian-sys.com",
     "title": "Staff Engineer"
   },
   "review_period": {
