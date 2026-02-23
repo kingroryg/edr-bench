@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -15,6 +15,7 @@ from edr_bench.scoring.metrics import (
     calc_detection_rate,
     calc_noise_ratio,
     calc_time_to_detect,
+    calc_time_to_detect_percentiles,
 )
 
 
@@ -121,3 +122,73 @@ class TestNoiseRatio:
 
     def test_partial_noise(self):
         assert calc_noise_ratio(2, 10) == pytest.approx(0.2)
+
+
+def _make_ttd_pairs(deltas_seconds: list[float]) -> list[tuple[GroundTruthEvent, Finding]]:
+    """Create matched pairs with specific time deltas."""
+    base = datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+    pairs = []
+    for i, delta in enumerate(deltas_seconds):
+        gt = GroundTruthEvent(
+            timestamp=base,
+            source="tracee",
+            scenario_id="T1",
+            event_type="execve",
+        )
+        finding = Finding(
+            id=f"F-{i}",
+            timestamp=base + timedelta(seconds=delta),
+            rule_name="R",
+            severity=Severity.MEDIUM,
+        )
+        pairs.append((gt, finding))
+    return pairs
+
+
+@pytest.mark.unit
+class TestTimeToDetectPercentiles:
+    def test_normal_case(self):
+        pairs = _make_ttd_pairs([1.0, 5.0, 10.0, 20.0, 50.0])
+        result = calc_time_to_detect_percentiles(pairs)
+        assert result is not None
+        assert "mean" in result
+        assert "p50" in result
+        assert "p90" in result
+        assert "p95" in result
+        assert "max" in result
+        assert result["max"] == pytest.approx(50.0)
+
+    def test_single_pair(self):
+        pairs = _make_ttd_pairs([3.5])
+        result = calc_time_to_detect_percentiles(pairs)
+        assert result is not None
+        assert result["p50"] == pytest.approx(3.5)
+        assert result["p90"] == pytest.approx(3.5)
+        assert result["p95"] == pytest.approx(3.5)
+        assert result["max"] == pytest.approx(3.5)
+
+    def test_empty_pairs(self):
+        assert calc_time_to_detect_percentiles([]) is None
+
+    def test_ordering(self):
+        pairs = _make_ttd_pairs([1.0, 2.0, 5.0, 10.0, 50.0, 100.0])
+        result = calc_time_to_detect_percentiles(pairs)
+        assert result is not None
+        assert result["p50"] <= result["p90"]
+        assert result["p90"] <= result["p95"]
+        assert result["p95"] <= result["max"]
+
+    def test_all_zero_deltas(self):
+        pairs = _make_ttd_pairs([0.0, 0.0, 0.0])
+        result = calc_time_to_detect_percentiles(pairs)
+        assert result is not None
+        assert result["p50"] == 0.0
+        assert result["p95"] == 0.0
+        assert result["max"] == 0.0
+
+    def test_large_spread(self):
+        # Asymmetric distribution: many small, one large
+        pairs = _make_ttd_pairs([0.1, 0.2, 0.3, 0.4, 0.5, 100.0])
+        result = calc_time_to_detect_percentiles(pairs)
+        assert result is not None
+        assert result["p50"] < result["p95"]

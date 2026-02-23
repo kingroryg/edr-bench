@@ -1,4 +1,4 @@
-FROM gophish/gophish:latest
+FROM gophish/gophish:0.12.1
 
 # Override default GoPhish configuration
 COPY config.json /opt/gophish/config.json

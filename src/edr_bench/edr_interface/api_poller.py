@@ -8,6 +8,7 @@ from typing import Any
 import structlog
 
 from edr_bench.edr_interface.base import EDRListener
+from edr_bench.utils.retry import retry_async
 from edr_bench.edr_interface.normalizer import FindingNormalizer
 from edr_bench.models.finding import Finding
 
@@ -93,6 +94,7 @@ class APIPoller(EDRListener):
                     logger.exception("api_poller.fetch_error", url=self._api_url)
                 await asyncio.sleep(self._poll_interval)
 
+    @retry_async(max_attempts=3, min_delay=2.0, max_delay=15.0, retry_on=(ConnectionError, OSError))
     async def _fetch_alerts(self, client: Any) -> None:
         """Perform a single GET /alerts request and process results."""
         params: dict[str, str] = {

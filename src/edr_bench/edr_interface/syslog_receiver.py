@@ -64,7 +64,7 @@ class SyslogReceiver(EDRListener):
         self._findings.clear()
         self._running = True
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         transport, _ = await loop.create_datagram_endpoint(
             lambda: _SyslogProtocol(self._queue),
             local_addr=(self._bind_address, self._port),

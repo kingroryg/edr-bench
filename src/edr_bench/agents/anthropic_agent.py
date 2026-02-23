@@ -37,9 +37,10 @@ class AnthropicComputerAgent(ComputerUseAgent):
         self.client = Anthropic(api_key=settings.agent.anthropic_api_key)
         self.model = settings.agent.anthropic_model
         self.vnc = VNCClient(
-            host="172.28.1.10",
+            host=settings.vnc.host,
             port=settings.vnc.port,
             password=settings.vnc.password,
+            container_name=settings.vnc.container_name,
         )
 
     async def take_screenshot(self) -> bytes:
@@ -145,6 +146,10 @@ class AnthropicComputerAgent(ComputerUseAgent):
             amount = action_input.get("amount", 3)
             clicks = amount if direction == "up" else -amount
             await self.vnc.scroll(coordinate[0], coordinate[1], clicks)
+        elif action == "wait":
+            # Claude sometimes requests explicit wait for UI to update
+            duration = action_input.get("duration", 3)
+            await asyncio.sleep(min(duration, 10))
 
         # Small delay for UI to update
         await asyncio.sleep(0.3)

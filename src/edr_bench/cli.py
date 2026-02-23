@@ -11,6 +11,12 @@ from rich.table import Table
 
 from edr_bench import __version__
 
+def _version_callback(value: bool) -> None:
+    if value:
+        Console().print(f"edr-bench {__version__}")
+        raise typer.Exit()
+
+
 app = typer.Typer(
     name="edr-bench",
     help="EDR benchmarking suite with simulated attacks and ground truth scoring.",
@@ -20,10 +26,13 @@ console = Console()
 
 
 @app.callback()
-def main(version: bool = typer.Option(False, "--version", "-v", help="Show version")) -> None:
-    if version:
-        console.print(f"edr-bench {__version__}")
-        raise typer.Exit()
+def main(
+    version: bool = typer.Option(
+        False, "--version", "-v", help="Show version",
+        callback=_version_callback, is_eager=True,
+    ),
+) -> None:
+    pass
 
 
 @app.command()
@@ -35,9 +44,16 @@ def run(
     config: Path | None = typer.Option(None, "--config", "-c", help="Config YAML file"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Validate and plan without executing"),
     edr_name: str = typer.Option("Unknown EDR", "--edr-name", help="EDR product name"),
+    scenario_id: str | None = typer.Option(
+        None, "--scenario-id", help="Comma-separated scenario IDs to run (e.g. COACH-033,LIN-CLI-004)"
+    ),
+    skip_ui: bool = typer.Option(False, "--skip-ui", help="Skip UI-role steps (set to 'skipped')"),
+    no_lifecycle: bool = typer.Option(False, "--no-lifecycle", help="Skip Docker start/stop (containers already running)"),
+    edr_settle: float | None = typer.Option(None, "--edr-settle", help="Seconds to wait for EDR events to settle after scenario execution"),
+    verbose: bool = typer.Option(False, "--verbose", help="Enable verbose/debug logging"),
 ) -> None:
     """Run benchmark scenarios against an EDR."""
-    from edr_bench.config.schema import load_config
+    from edr_bench.config.schema import load_config, validate_config
     from edr_bench.models.enums import Platform
     from edr_bench.orchestrator.engine import BenchmarkOrchestrator
     from edr_bench.reporting.json_report import JSONReporter
@@ -46,27 +62,59 @@ def run(
 
     settings = load_config(config)
     settings.dry_run = dry_run
+    settings.skip_ui = skip_ui
+    settings.no_lifecycle = no_lifecycle
     settings.scenarios_dir = scenarios_dir
     if edr_name != "Unknown EDR":
         settings.edr.name = edr_name
+    if edr_settle is not None:
+        settings.edr.edr_settle_seconds = edr_settle
+    if verbose:
+        settings.log_level = "DEBUG"
+    # Wire up EDR-specific log paths
+    if "wazuh" in edr_name.lower():
+        wazuh_path = Path("docker/wazuh-alerts/alerts.json").resolve()
+        settings.edr.log_path = str(wazuh_path)
     configure_logging(settings.log_level)
+
+    config_warnings = validate_config(settings)
+    for warning in config_warnings:
+        console.print(f"[yellow]Warning: {warning}[/yellow]")
 
     platform_enum = Platform(platform)
     loader = CSVLoader()
     scenarios = loader.load_directory(scenarios_dir)
 
+    # Filter by scenario ID if specified
+    if scenario_id:
+        ids = {s.strip() for s in scenario_id.split(",")}
+        scenarios = [s for s in scenarios if s.id in ids]
+        missing = ids - {s.id for s in scenarios}
+        if missing:
+            console.print(f"[yellow]Warning: scenario IDs not found: {', '.join(sorted(missing))}[/yellow]")
+
     if not scenarios:
         console.print("[red]No scenarios found.[/red]")
         raise typer.Exit(1)
 
-    console.print(f"Loaded {len(scenarios)} scenarios from {scenarios_dir}")
+    from edr_bench.reporting.progress import RichProgressDisplay
+
+    console.print(f"Loaded [bold]{len(scenarios)}[/bold] scenarios from {scenarios_dir}")
     orchestrator = BenchmarkOrchestrator(settings)
 
     if dry_run:
         asyncio.run(orchestrator.run_dry(scenarios, platform_enum))
         console.print("[green]Dry run complete.[/green]")
     else:
-        report = asyncio.run(orchestrator.run_benchmark(scenarios, platform_enum))
+        progress = RichProgressDisplay(console=console)
+        try:
+            report = asyncio.run(
+                orchestrator.run_benchmark(scenarios, platform_enum, progress_callback=progress)
+            )
+        except KeyboardInterrupt:
+            progress.finalize()
+            console.print("\n[yellow]Benchmark interrupted by user.[/yellow]")
+            raise typer.Exit(130)
         output = settings.report_output_dir / f"{report.report_id}.json"
         output.parent.mkdir(parents=True, exist_ok=True)
         reporter = JSONReporter()

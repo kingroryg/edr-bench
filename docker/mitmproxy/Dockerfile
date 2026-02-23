@@ -1,4 +1,4 @@
-FROM mitmproxy/mitmproxy:latest
+FROM mitmproxy/mitmproxy:10.4.2
 
 # Copy custom addon for structured traffic logging
 COPY addons/log_traffic.py /home/mitmproxy/addons/log_traffic.py
@@ -8,7 +8,7 @@ RUN mkdir -p /flows
 
 EXPOSE 8080 8081
 
-CMD ["mitmdump", \
+CMD ["mitmweb", \
      "--set", "stream_large_bodies=10m", \
      "-s", "/home/mitmproxy/addons/log_traffic.py", \
      "-w", "/flows/traffic.flow", \

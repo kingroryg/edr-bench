@@ -26,7 +26,7 @@ class USBSimulatorExecutor(AttackExecutor):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        self._docker = DockerClientWrapper(settings.docker)
+        self._docker = DockerClientWrapper(settings.docker.host)
 
     async def execute(self, step: SimulationStep, scenario: Scenario) -> None:
         container_name = f"edr-bench-victim-{scenario.platform.value}-1"
@@ -103,7 +103,7 @@ class USBSimulatorExecutor(AttackExecutor):
         log.debug("usb_simulator_exec", description=description, command=command)
 
         try:
-            exit_code, output = await self._docker.exec_in_container(
+            result = await self._docker.exec_in_container(
                 container_name=container_name,
                 command=command,
                 timeout=timeout,
@@ -112,19 +112,20 @@ class USBSimulatorExecutor(AttackExecutor):
             log.error("usb_simulator_timeout", description=description)
             raise
 
-        if exit_code != 0:
+        if result.exit_code != 0:
+            output = result.stderr or result.stdout
             log.error(
                 "usb_simulator_exec_failed",
                 description=description,
-                exit_code=exit_code,
+                exit_code=result.exit_code,
                 output=output,
             )
             raise RuntimeError(
                 f"USB simulator step '{description}' failed with exit code "
-                f"{exit_code}: {output}"
+                f"{result.exit_code}: {output}"
             )
 
-        return exit_code, output
+        return result.exit_code, result.stdout
 
     async def validate(self, step: SimulationStep) -> list[str]:
         errors: list[str] = []

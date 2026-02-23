@@ -29,9 +29,10 @@ class OpenAIComputerAgent(ComputerUseAgent):
         self.client = OpenAI(api_key=settings.agent.openai_api_key)
         self.model = settings.agent.openai_model
         self.vnc = VNCClient(
-            host="172.28.1.10",
+            host=settings.vnc.host,
             port=settings.vnc.port,
             password=settings.vnc.password,
+            container_name=settings.vnc.container_name,
         )
 
     async def take_screenshot(self) -> bytes:

@@ -9,9 +9,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up SSH server for scp/sftp scenarios
+ARG MOCKNET_SSH_PASSWORD=changeme
 RUN mkdir -p /run/sshd \
     && useradd -m -s /bin/bash admin \
-    && echo "admin:Kx9mP2q" | chpasswd \
+    && echo "admin:${MOCKNET_SSH_PASSWORD}" | chpasswd \
     && mkdir -p /var/backups \
     && chown admin:admin /var/backups \
     && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
@@ -42,8 +43,8 @@ RUN mkdir -p /var/log/mocknet
 
 EXPOSE 80 443 53 22 8080 8443 8888
 
-# NOTE: Make sure entrypoint commands are executable in the build context.
-CMD /usr/sbin/sshd && \
-    dnsmasq --keep-in-foreground &  \
-    nginx &  \
-    python3 /app/app.py
+# Copy entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]

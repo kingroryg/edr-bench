@@ -35,6 +35,23 @@ iptables -t nat -A OUTPUT -d 192.168.1.0/24 -j DNAT --to-destination 172.28.2.10
 iptables -t nat -A OUTPUT -p udp --dport 53 ! -d 172.28.2.10 -j DNAT --to-destination 172.28.2.10:53 || true
 iptables -t nat -A OUTPUT -p tcp --dport 53 ! -d 172.28.2.10 -j DNAT --to-destination 172.28.2.10:53 || true
 
+# Populate /etc/hosts from mocknet's dnsmasq config as a fallback for DNS
+# (Docker Desktop on macOS may block UDP between containers).
+echo "[entrypoint] Adding mocknet domain entries to /etc/hosts..."
+for domain in chatgpt.com salesforce.com github.com drive.google.com docs.google.com \
+    mail.google.com gmail.com accounts.google.com chrome.google.com slack.com \
+    web.whatsapp.com telegram.org web.telegram.org discord.com linkedin.com \
+    www.linkedin.com indeed.com banking.example.com okta.example.com \
+    zendesk.example.com freshdesk.example.com zoom.us phishing.example.com \
+    login.company-secure.xyz webtransfer.com amazonaws.com \
+    cdn-update.s3.amazonaws.com internal-api.meridian-sys.com c2.evil.com \
+    attacker-dns.com addons.mozilla.org registry.npmjs.org pypi.org \
+    files.pythonhosted.org marketplace.visualstudio.com update.code.visualstudio.com \
+    shadowy-saas-tool.com wetransfer.com mail.company.com app.company.com \
+    banking-portal.example.com app.slack.com sheets.google.com; do
+    grep -q "$domain" /etc/hosts 2>/dev/null || echo "172.28.2.10 $domain" >> /etc/hosts
+done
+
 # ---------------------------------------------------------------------------
 # SSH config: accept all host keys (test environment only)
 # ---------------------------------------------------------------------------
@@ -48,7 +65,7 @@ Host *
 SSHEOF
 
 # Create user home directory structure
-mkdir -p /home/user/Downloads /home/user/Documents /home/user/.ssh /home/user/PDF
+mkdir -p /home/user/Downloads /home/user/Documents /home/user/.ssh /home/user/PDF /home/user/Desktop
 chmod 700 /home/user/.ssh
 
 # ---------------------------------------------------------------------------
@@ -83,6 +100,37 @@ unset DBUS_SESSION_BUS_ADDRESS
 exec startxfce4
 EOF
 chmod +x /root/.vnc/xstartup
+
+# ---------------------------------------------------------------------------
+# Wazuh agent: conditional activation
+# ---------------------------------------------------------------------------
+if [ "${WAZUH_AGENT_ENABLED}" = "true" ]; then
+    echo "[entrypoint] Enabling Wazuh agent (manager: ${WAZUH_MANAGER_IP:-172.28.6.10})..."
+    sed -i 's/autostart=false/autostart=true/' /etc/supervisor/conf.d/supervisord.conf
+
+    # Deploy custom agent config if available
+    if [ -f /opt/wazuh-agent-ossec.conf ]; then
+        cp /opt/wazuh-agent-ossec.conf /var/ossec/etc/ossec.conf
+        sed -i "s|WAZUH_MANAGER_IP|${WAZUH_MANAGER_IP:-172.28.6.10}|g" /var/ossec/etc/ossec.conf
+        echo "[entrypoint] Custom Wazuh agent config deployed"
+    elif [ -f /var/ossec/etc/ossec.conf ]; then
+        sed -i "s|<address>.*</address>|<address>${WAZUH_MANAGER_IP:-172.28.6.10}</address>|" /var/ossec/etc/ossec.conf
+    fi
+
+    # Start auditd for command execution monitoring
+    echo "[entrypoint] Starting auditd..."
+    mkdir -p /var/log/audit
+    auditd 2>/dev/null &
+    sleep 1
+    # Audit rules: track command execution, credential access, file writes
+    auditctl -a always,exit -F arch=b64 -S execve -k exec_monitor 2>/dev/null || true
+    auditctl -w /etc/shadow -p r -k shadow_access 2>/dev/null || true
+    auditctl -w /etc/passwd -p rwa -k passwd_access 2>/dev/null || true
+    auditctl -w /home/user/.ssh -p rwa -k ssh_access 2>/dev/null || true
+    auditctl -w /var/spool/cron -p rwa -k cron_access 2>/dev/null || true
+    auditctl -w /tmp -p w -k tmp_write 2>/dev/null || true
+    echo "[entrypoint] Audit rules configured"
+fi
 
 echo "[entrypoint] Starting supervisord..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

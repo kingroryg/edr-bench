@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+import numpy as np
 import structlog
 
 from edr_bench.config.settings import Settings
@@ -25,6 +26,7 @@ from edr_bench.models.scenario import Scenario, SimulationStep
 from edr_bench.orchestrator.lifecycle import DockerLifecycleManager
 from edr_bench.orchestrator.scheduler import ScenarioScheduler
 from edr_bench.scoring.engine import ScoringEngine
+from edr_bench.reporting.progress import ProgressCallback
 from edr_bench.utils.timing import Timer
 
 logger = structlog.get_logger()
@@ -49,6 +51,7 @@ class BenchmarkOrchestrator:
         self,
         scenarios: list[Scenario],
         platform: Platform | None = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> BenchmarkReport:
         """Execute a full benchmark run."""
         run_id = uuid4().hex[:12]
@@ -60,16 +63,54 @@ class BenchmarkOrchestrator:
 
         profile = platform.value if platform else "full"
 
-        if not self.settings.dry_run:
+        if not self.settings.dry_run and not self.settings.no_lifecycle:
             await self.lifecycle.start_services(profile)
 
         results: list[ScenarioResult] = []
+        failed_count = 0
+        total = len(plan)
         try:
-            for scenario in plan:
-                result = await self._execute_scenario(scenario)
+            for idx, scenario in enumerate(plan, 1):
+                if progress_callback is not None:
+                    progress_callback.on_scenario_start(scenario.id, scenario.name, idx, total)
+                try:
+                    result = await self._execute_scenario(scenario)
+                    if progress_callback is not None:
+                        progress_callback.on_scenario_complete(scenario.id, result)
+                except Exception as exc:
+                    logger.exception("scenario_crashed", scenario_id=scenario.id)
+                    failed_count += 1
+                    result = ScenarioResult(
+                        scenario_id=scenario.id,
+                        scenario_name=scenario.name,
+                        platform=scenario.platform,
+                        attack_type=scenario.attack_type,
+                        mitre_technique_id=scenario.mitre_technique_id,
+                        detection_rate=0.0,
+                        contextual_accuracy=0.0,
+                        blocking_efficacy=0.0,
+                        noise_ratio=0.0,
+                        ground_truth_count=0,
+                        findings_count=0,
+                        matched_count=0,
+                        false_positive_count=0,
+                        errors=[f"Scenario crashed: {exc}"],
+                    )
+                    if progress_callback is not None:
+                        progress_callback.on_scenario_error(scenario.id, str(exc))
                 results.append(result)
+            passed_count = len(results) - failed_count
+            logger.info(
+                "benchmark_scenario_summary",
+                passed=passed_count,
+                failed=failed_count,
+                total=len(results),
+            )
         finally:
-            if not self.settings.dry_run:
+            if progress_callback is not None:
+                progress_callback.finalize()
+            await self.scoring.close()
+            if not self.settings.dry_run and not self.settings.no_lifecycle:
                 await self.lifecycle.stop_services(profile)
 
         report = self._build_report(run_id, results)
@@ -148,6 +189,26 @@ class BenchmarkOrchestrator:
             step_start = time.monotonic()
             step_status = "success"
             step_error: str | None = None
+
+            # Skip UI steps when --skip-ui is active
+            if self.settings.skip_ui and step.role == Role.UI:
+                step_results.append(
+                    StepResult(
+                        step_order=step.order,
+                        role=step.role,
+                        status="skipped",
+                        error_message="Skipped (--skip-ui)",
+                        duration_seconds=0.0,
+                    )
+                )
+                logger.info(
+                    "step_skipped",
+                    scenario_id=scenario.id,
+                    step_order=step.order,
+                    role=step.role,
+                )
+                continue
+
             try:
                 executor = self._get_executor(step)
                 await asyncio.wait_for(
@@ -185,6 +246,9 @@ class BenchmarkOrchestrator:
                     status=step_status,
                     error_message=step_error,
                     duration_seconds=round(step_duration, 3),
+                    command=step.command,
+                    description=step.description,
+                    expected_artifact=step.expected_artifact,
                 )
                 step_results.append(step_result)
 
@@ -216,8 +280,8 @@ class BenchmarkOrchestrator:
                     duration_seconds=round(step_duration, 3),
                 )
 
-        # Wait for ground truth events to settle
-        await asyncio.sleep(5.0)
+        # Wait for EDR events to settle (syscheck needs up to 60s between scans)
+        await asyncio.sleep(self.settings.edr.edr_settle_seconds)
         ground_truth_events = await self.ground_truth_collector.stop_and_collect()
         gt_task.cancel()
 
@@ -232,7 +296,30 @@ class BenchmarkOrchestrator:
         result.execution_started = timer.start_time
         result.execution_finished = timer.end_time
         result.errors = errors
+
+        # Annotate step results with per-step EDR detection attribution
+        step_commands = {
+            sr.step_order: sr.command
+            for sr in step_results
+            if sr.command and sr.status == "success"
+        }
+        step_detections = self.scoring.get_step_detections(step_commands=step_commands)
+        for sr in step_results:
+            matched_findings = step_detections.get(sr.step_order, [])
+            sr.detected = len(matched_findings) > 0
+            sr.matched_finding_count = len(matched_findings)
+            sr.finding_summaries = [
+                f.rule_name or f.description or "Unknown alert"
+                for f in matched_findings[:10]
+            ]
         result.step_results = step_results
+
+        # Attack chain coverage: fraction of executed steps that were detected
+        non_skipped = [s for s in step_results if s.status != "skipped"]
+        detected_steps = sum(1 for s in non_skipped if s.detected)
+        result.attack_chain_coverage = (
+            detected_steps / len(non_skipped) if non_skipped else None
+        )
 
         succeeded = sum(1 for s in step_results if s.status == "success")
         logger.info(
@@ -243,6 +330,8 @@ class BenchmarkOrchestrator:
             findings=result.findings_count,
             steps_total=len(step_results),
             steps_succeeded=succeeded,
+            steps_detected=detected_steps,
+            attack_chain_coverage=result.attack_chain_coverage,
             execution_completeness=result.execution_completeness,
         )
         return result
@@ -294,6 +383,22 @@ class BenchmarkOrchestrator:
         ttds = [r.time_to_detect_seconds for r in results if r.time_to_detect_seconds is not None]
         avg_ttd = sum(ttds) / len(ttds) if ttds else None
 
+        # Aggregate TTD percentiles from raw event-level deltas across all scenarios
+        all_ttd_deltas: list[float] = []
+        for r in results:
+            all_ttd_deltas.extend(r.ttd_raw_deltas)
+        if all_ttd_deltas:
+            arr = np.array(all_ttd_deltas)
+            aggregate_ttd_percentiles: dict[str, float] | None = {
+                "mean": float(np.mean(arr)),
+                "p50": float(np.percentile(arr, 50)),
+                "p90": float(np.percentile(arr, 90)),
+                "p95": float(np.percentile(arr, 95)),
+                "max": float(np.max(arr)),
+            }
+        else:
+            aggregate_ttd_percentiles = None
+
         blocking = [r.blocking_efficacy for r in results]
         overall_block = sum(blocking) / len(blocking) if blocking else 0.0
 
@@ -323,6 +428,7 @@ class BenchmarkOrchestrator:
             overall_detection_rate=overall_dr,
             overall_contextual_accuracy=overall_acc,
             average_time_to_detect=avg_ttd,
+            time_to_detect_percentiles=aggregate_ttd_percentiles,
             overall_blocking_efficacy=overall_block,
             overall_noise_ratio=overall_noise,
             technique_scores=technique_scores,

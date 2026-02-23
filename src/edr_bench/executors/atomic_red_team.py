@@ -23,7 +23,7 @@ class AtomicRedTeamExecutor(AttackExecutor):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        self._docker = DockerClientWrapper(settings.docker)
+        self._docker = DockerClientWrapper(settings.docker.host)
 
     async def execute(self, step: SimulationStep, scenario: Scenario) -> None:
         container_name = f"edr-bench-victim-{scenario.platform.value}-1"
@@ -44,7 +44,7 @@ class AtomicRedTeamExecutor(AttackExecutor):
         log.info("executing_atomic_red_team_step", command=command)
 
         try:
-            exit_code, output = await self._docker.exec_in_container(
+            result = await self._docker.exec_in_container(
                 container_name=container_name,
                 command=command,
                 timeout=step.timeout_seconds,
@@ -56,17 +56,18 @@ class AtomicRedTeamExecutor(AttackExecutor):
             )
             raise
 
-        if exit_code != 0:
+        if result.exit_code != 0:
+            output = result.stderr or result.stdout
             log.error(
                 "atomic_red_team_nonzero_exit",
-                exit_code=exit_code,
+                exit_code=result.exit_code,
                 output=output,
             )
             raise RuntimeError(
-                f"Atomic Red Team test exited with code {exit_code}: {output}"
+                f"Atomic Red Team test exited with code {result.exit_code}: {output}"
             )
 
-        log.info("atomic_red_team_step_complete", exit_code=exit_code)
+        log.info("atomic_red_team_step_complete", exit_code=result.exit_code)
 
     async def validate(self, step: SimulationStep) -> list[str]:
         errors: list[str] = []

@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from edr_bench.models.finding import Finding, Severity
+from edr_bench.models.enums import Severity
+from edr_bench.models.finding import Finding
 from edr_bench.models.ground_truth import GroundTruthEvent
 
 
@@ -109,6 +110,19 @@ def calc_time_to_detect(
     return float(np.mean(deltas))
 
 
+def calc_ttd_deltas(
+    matched_pairs: list[tuple[GroundTruthEvent, Finding]],
+) -> list[float]:
+    """Return the raw per-event TTD deltas in seconds.
+
+    Returns an empty list when there are no matched pairs.
+    """
+    return [
+        abs((finding.timestamp - gt.timestamp).total_seconds())
+        for gt, finding in matched_pairs
+    ]
+
+
 def calc_time_to_detect_percentiles(
     matched_pairs: list[tuple[GroundTruthEvent, Finding]],
 ) -> dict[str, float] | None:
@@ -119,10 +133,7 @@ def calc_time_to_detect_percentiles(
     if not matched_pairs:
         return None
 
-    deltas = np.array([
-        abs((finding.timestamp - gt.timestamp).total_seconds())
-        for gt, finding in matched_pairs
-    ])
+    deltas = np.array(calc_ttd_deltas(matched_pairs))
 
     return {
         "mean": float(np.mean(deltas)),

@@ -12,29 +12,83 @@ from PIL import Image
 
 logger = structlog.get_logger()
 
+# Map key names from Claude CU / common formats to asyncvnc keysymdef names
+_KEY_ALIASES: dict[str, str] = {
+    "alt": "Alt",
+    "ctrl": "Ctrl",
+    "control": "Ctrl",
+    "shift": "Shift",
+    "super": "Super",
+    "meta": "Super",
+    "cmd": "Cmd",
+    "enter": "Return",
+    "return": "Return",
+    "esc": "Esc",
+    "escape": "Esc",
+    "backspace": "Backspace",
+    "delete": "Del",
+    "del": "Del",
+    "tab": "Tab",
+    "space": "space",
+    "up": "Up",
+    "down": "Down",
+    "left": "Left",
+    "right": "Right",
+    "home": "Home",
+    "end": "End",
+    "pageup": "Page_Up",
+    "page_up": "Page_Up",
+    "pagedown": "Page_Down",
+    "page_down": "Page_Down",
+    "insert": "Insert",
+}
+
+
+def _map_key_name(key: str) -> str:
+    """Map a key name to an asyncvnc-compatible name."""
+    # Check case-insensitive alias first
+    lower = key.lower()
+    if lower in _KEY_ALIASES:
+        return _KEY_ALIASES[lower]
+    # F-keys: f1-f12 -> F1-F12
+    if lower.startswith("f") and lower[1:].isdigit():
+        return f"F{lower[1:]}"
+    # Already a valid asyncvnc key name (single char, or exact keysymdef name)
+    return key
+
 
 class VNCClient:
     """Async VNC client wrapping asyncvnc for screenshot and input."""
 
-    def __init__(self, host: str, port: int = 5900, password: str = "") -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int = 5900,
+        password: str = "",
+        container_name: str = "",
+    ) -> None:
         self.host = host
         self.port = port
         self.password = password
+        self._container_name = container_name
         self._connection = None
+        self._ctx = None
 
     async def connect(self) -> None:
         """Establish VNC connection."""
         import asyncvnc
 
-        self._connection = await asyncvnc.connect(
+        self._ctx = asyncvnc.connect(
             self.host, port=self.port, password=self.password
         )
+        self._connection = await self._ctx.__aenter__()
         logger.info("vnc_connected", host=self.host, port=self.port)
 
     async def disconnect(self) -> None:
         """Close VNC connection."""
-        if self._connection:
-            self._connection.close()
+        if self._ctx:
+            await self._ctx.__aexit__(None, None, None)
+            self._ctx = None
             self._connection = None
             logger.info("vnc_disconnected")
 
@@ -48,15 +102,38 @@ class VNCClient:
             await self.disconnect()
 
     async def screenshot(self) -> bytes:
-        """Capture screenshot as PNG bytes."""
+        """Capture screenshot as PNG bytes.
+
+        Uses ImageMagick ``import`` inside the container via docker exec,
+        which is more reliable than asyncvnc's screenshot() (that method
+        can hang on static screens or crash on unsupported VNC encodings).
+        Falls back to asyncvnc if docker exec is unavailable.
+        """
         if not self._connection:
             raise RuntimeError("VNC not connected")
 
-        pixels = self._connection.screenshot()
+        if self._container_name:
+            return await self._screenshot_via_docker()
+
+        # Fallback: direct VNC screenshot (may hang or fail with some servers)
+        pixels = await self._connection.screenshot()
         image = Image.fromarray(pixels)
         buf = io.BytesIO()
         image.save(buf, format="PNG")
         return buf.getvalue()
+
+    async def _screenshot_via_docker(self) -> bytes:
+        """Capture screenshot using ImageMagick inside the container."""
+        proc = await asyncio.create_subprocess_exec(
+            "docker", "exec", self._container_name,
+            "bash", "-c", "DISPLAY=:1 import -window root png:-",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=10.0)
+        if proc.returncode != 0:
+            raise RuntimeError(f"Screenshot failed: {stderr.decode()[:200]}")
+        return stdout
 
     async def mouse_move(self, x: int, y: int) -> None:
         """Move mouse to coordinates."""
@@ -78,10 +155,15 @@ class VNCClient:
         await self.mouse_click(x, y)
 
     async def key_press(self, key: str) -> None:
-        """Press a key."""
+        """Press a key or key combination (e.g., 'alt+F2', 'ctrl+c')."""
         if not self._connection:
             raise RuntimeError("VNC not connected")
-        self._connection.keyboard.press(key)
+
+        # Split compound key combos on '+' (e.g., "alt+F2" -> ["alt", "F2"])
+        parts = [k.strip() for k in key.split("+")]
+        # Map common Claude CU key names to asyncvnc names
+        mapped = [_map_key_name(p) for p in parts]
+        self._connection.keyboard.press(*mapped)
 
     async def type_text(self, text: str, delay: float = 0.02) -> None:
         """Type text character by character."""

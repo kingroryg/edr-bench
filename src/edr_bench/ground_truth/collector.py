@@ -7,6 +7,7 @@ from typing import Any
 
 import structlog
 
+from edr_bench.config.settings import Settings
 from edr_bench.ground_truth.docker_events import DockerEventCollector
 from edr_bench.ground_truth.mitmproxy_parser import MitmproxyParser
 from edr_bench.ground_truth.mocknet_parser import MockNetParser
@@ -19,7 +20,7 @@ logger = structlog.get_logger(__name__)
 class GroundTruthCollector:
     """Aggregate ground truth from Tracee, mitmproxy, and Docker events."""
 
-    def __init__(self, settings: Any) -> None:
+    def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._tracee = TraceeMonitor(settings)
         self._mitmproxy = MitmproxyParser()

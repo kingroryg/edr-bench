@@ -1,0 +1,107 @@
+<!--
+  Custom Wazuh rules for edr-bench scenarios.
+  These supplement the built-in ruleset with detections aligned to benchmark scenarios.
+  Rule IDs 100200-100299 are reserved for edr-bench.
+-->
+<group name="edr-bench,">
+
+  <!-- Data exfiltration via curl/wget -->
+  <rule id="100200" level="12">
+    <if_sid>530</if_sid>
+    <match>curl.*POST|wget.*--post-data</match>
+    <description>Possible data exfiltration via HTTP POST (curl/wget)</description>
+    <mitre>
+      <id>T1048</id>
+    </mitre>
+    <group>exfiltration,</group>
+  </rule>
+
+  <!-- Exfiltration via DNS -->
+  <rule id="100201" level="12">
+    <if_sid>530</if_sid>
+    <match>dig |nslookup |host .*TXT</match>
+    <description>Possible data exfiltration via DNS queries</description>
+    <mitre>
+      <id>T1048.003</id>
+    </mitre>
+    <group>exfiltration,</group>
+  </rule>
+
+  <!-- Credential file access -->
+  <rule id="100210" level="10">
+    <if_sid>550,553</if_sid>
+    <match>/etc/shadow|/etc/passwd|.ssh/id_rsa|.aws/credentials</match>
+    <description>Sensitive credential file accessed or modified</description>
+    <mitre>
+      <id>T1003</id>
+    </mitre>
+    <group>credential_access,</group>
+  </rule>
+
+  <!-- Reverse shell detection -->
+  <rule id="100220" level="14">
+    <if_sid>530</if_sid>
+    <match>bash -i >& /dev/tcp|nc -e /bin|ncat.*-e|python.*socket.*connect</match>
+    <description>Possible reverse shell execution</description>
+    <mitre>
+      <id>T1059</id>
+    </mitre>
+    <group>execution,</group>
+  </rule>
+
+  <!-- Suspicious cron job creation -->
+  <rule id="100230" level="10">
+    <if_sid>550</if_sid>
+    <match>/var/spool/cron|/etc/cron</match>
+    <description>Cron job created or modified (possible persistence)</description>
+    <mitre>
+      <id>T1053.003</id>
+    </mitre>
+    <group>persistence,</group>
+  </rule>
+
+  <!-- SSH key manipulation -->
+  <rule id="100240" level="10">
+    <if_sid>550</if_sid>
+    <match>.ssh/authorized_keys</match>
+    <description>SSH authorized_keys file modified</description>
+    <mitre>
+      <id>T1098.004</id>
+    </mitre>
+    <group>persistence,credential_access,</group>
+  </rule>
+
+  <!-- Base64 encoding (potential obfuscation) -->
+  <rule id="100250" level="8">
+    <if_sid>530</if_sid>
+    <match>base64 |base64$</match>
+    <description>Base64 encoding detected (possible data obfuscation)</description>
+    <mitre>
+      <id>T1027</id>
+    </mitre>
+    <group>defense_evasion,</group>
+  </rule>
+
+  <!-- File copy to removable media -->
+  <rule id="100260" level="10">
+    <if_sid>550</if_sid>
+    <match>/media/usb|/mnt/usb|/media/removable</match>
+    <description>File written to removable media</description>
+    <mitre>
+      <id>T1052.001</id>
+    </mitre>
+    <group>exfiltration,</group>
+  </rule>
+
+  <!-- Suspicious package installation -->
+  <rule id="100270" level="8">
+    <if_sid>530</if_sid>
+    <match>pip install |npm install |curl.*| sh$|wget.*| bash$</match>
+    <description>Suspicious package or script installation</description>
+    <mitre>
+      <id>T1195.002</id>
+    </mitre>
+    <group>initial_access,</group>
+  </rule>
+
+</group>

@@ -7,6 +7,7 @@ from typing import Any
 
 import structlog
 
+from edr_bench.config.settings import Settings
 from edr_bench.edr_interface.api_poller import APIPoller
 from edr_bench.edr_interface.base import EDRListener
 from edr_bench.edr_interface.file_tailer import FileTailer
@@ -26,6 +27,7 @@ from edr_bench.scoring.metrics import (
     calc_noise_ratio,
     calc_time_to_detect,
     calc_time_to_detect_percentiles,
+    calc_ttd_deltas,
 )
 
 logger = structlog.get_logger(__name__)
@@ -34,7 +36,7 @@ logger = structlog.get_logger(__name__)
 class ScoringEngine:
     """Orchestrate correlation and metric calculation for a single scenario."""
 
-    def __init__(self, settings: Any) -> None:
+    def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._correlator = GroundTruthCorrelator(
             window_seconds=settings.correlation_window_seconds,
@@ -100,6 +102,7 @@ class ScoringEngine:
         contextual_accuracy = calc_contextual_accuracy(correlation.matched_pairs)
         time_to_detect = calc_time_to_detect(correlation.matched_pairs)
         ttd_percentiles = calc_time_to_detect_percentiles(correlation.matched_pairs)
+        ttd_deltas = calc_ttd_deltas(correlation.matched_pairs)
         blocking_efficacy = calc_blocking_efficacy(correlation.matched_pairs)
         noise_ratio = calc_noise_ratio(fp_count, findings_count)
 
@@ -113,6 +116,7 @@ class ScoringEngine:
             contextual_accuracy=contextual_accuracy,
             time_to_detect_seconds=time_to_detect,
             time_to_detect_percentiles=ttd_percentiles,
+            ttd_raw_deltas=ttd_deltas,
             blocking_efficacy=blocking_efficacy,
             noise_ratio=noise_ratio,
             ground_truth_count=gt_count,

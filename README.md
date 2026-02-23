@@ -4,10 +4,10 @@ A benchmarking suite that tests how well your EDR actually catches threats. It s
 
 ## What it does
 
-1. **Runs attacks in sandboxed containers** -- CLI commands, browser-based actions driven by AI agents, phishing campaigns, cloud misconfigs, USB exfil, the works.
-2. **Records exactly what happened** -- using Tracee (eBPF), mitmproxy, and Docker events so you have solid ground truth.
-3. **Checks your EDR's homework** -- pulls alerts from your EDR (log files, API, or syslog) and matches them against what actually happened.
-4. **Gives you a score** -- detection rate, time-to-detect, blocking efficacy, contextual accuracy, and noise ratio.
+1. **Runs attacks in sandboxed containers** -- CLI commands via docker exec, browser-based actions driven by AI computer-use agents over VNC, phishing campaigns, cloud misconfigs, USB exfil, the works.
+2. **Records exactly what happened** -- using auditd, mitmproxy, Docker events, and MockNet form-submission logging so you have solid ground truth.
+3. **Checks your EDR's homework** -- pulls alerts from your EDR (log files, API, or syslog) and matches them against what actually happened using Hungarian algorithm correlation.
+4. **Gives you a score** -- detection rate, time-to-detect (with p50/p90/p95 percentiles), blocking efficacy, contextual accuracy, and noise ratio.
 5. **Generates a report** -- HTML with a MITRE ATT&CK heatmap so you can see coverage gaps at a glance.
 
 ## Scenarios
@@ -56,8 +56,15 @@ edr-bench validate data/scenarios/
 # do a dry run to see what would happen
 edr-bench run --platform linux --dry-run
 
-# run it for real
-edr-bench run --platform linux --edr-name "My EDR"
+# run it for real (CLI scenarios only)
+edr-bench run --platform linux --edr-name "My EDR" --no-lifecycle
+
+# run with UI scenarios (needs Anthropic API key for Claude Computer Use)
+AGENT_ANTHROPIC_API_KEY="sk-ant-..." \
+AGENT_ANTHROPIC_MODEL="claude-sonnet-4-20250514" \
+VNC_HOST=localhost VNC_PORT=5900 VNC_PASSWORD=changeme \
+VNC_CONTAINER_NAME=docker-victim-linux-1 \
+edr-bench run --platform linux --edr-name "My EDR" --no-lifecycle --edr-settle 60
 
 # generate an html report from the json output
 edr-bench report reports/<report-id>.json -o report.html
@@ -66,30 +73,35 @@ edr-bench report reports/<report-id>.json -o report.html
 ## Architecture
 
 ```
-victim-linux (Ubuntu 22.04 + XFCE + VNC + Firefox)
+victim-linux (Ubuntu 22.04 + XFCE + VNC + Firefox ESR)
   |
   |-- DNS queries --> dnsmasq on mocknet (spoofs domains)
+  |-- /etc/hosts --> mocknet IP fallback (macOS Docker Desktop blocks UDP)
   |-- HTTP traffic --> mitmproxy (logs all flows)
   |-- Browser --> nginx on mocknet (serves 25+ fake sites)
   |                  |
   |                  +--> Flask app (logs all form submissions as ground truth)
   |
-  +-- eBPF --> Tracee (captures syscalls, file access, network connections)
+  +-- auditd --> command execution, credential access, file write monitoring
+  +-- Docker events --> container exec tracking
 
-controller (orchestrator)
+host (orchestrator -- runs on your machine, NOT inside containers)
   |-- drives CLI scenarios via docker exec
-  |-- drives UI scenarios via VNC + AI computer-use agent
+  |-- drives UI scenarios via VNC + Claude Computer Use API
+  |      |-- screenshots via: docker exec <container> "DISPLAY=:1 import -window root png:-"
+  |      |-- mouse/keyboard via asyncvnc
+  |      |-- API keys stay on host (never sent to container)
   |-- collects ground truth from all sources
   |-- pulls EDR alerts and scores them
 ```
 
-All external IPs referenced in scenarios (203.0.113.x, 192.168.1.x) are iptables-DNAT'd to mocknet so commands like `scp` and `curl` to "external servers" actually succeed and get logged. DNS queries (even explicit `dig @8.8.8.8`) are redirected to dnsmasq for ground truth capture.
+All external IPs referenced in scenarios (203.0.113.x, 192.168.1.x) are iptables-DNAT'd to mocknet so commands like `scp` and `curl` to "external servers" actually succeed and get logged. DNS queries (even explicit `dig @8.8.8.8`) are redirected to dnsmasq for ground truth capture. On macOS Docker Desktop (which blocks inter-container UDP), mock domains are also added to `/etc/hosts` as a fallback.
 
 ## Docker services
 
 | Profile | What you get |
 |---------|-------------|
-| `linux` | Linux victim + MockNet + mitmproxy + Tracee + controller |
+| `linux` | Linux victim + MockNet + mitmproxy + controller |
 | `windows` | Windows victim + MockNet + mitmproxy + controller |
 | `cloud` | Controller + LocalStack |
 | `phishing` | Controller + GoPhish |
@@ -102,7 +114,9 @@ make logs                # follow logs
 make down                # tear down
 ```
 
-The victim-linux container at `localhost:6080` (noVNC) includes: Firefox, VS Code, Node.js/npm, Terraform, PowerShell, Syncthing, CUPS-PDF printer, Atomic Red Team, and all standard Linux tools.
+The victim-linux container at `localhost:6080` (noVNC) or `localhost:5900` (VNC) includes: Firefox ESR (from Mozilla tarball, not snap), VS Code, Node.js/npm, Terraform, PowerShell, Syncthing, CUPS-PDF printer, ImageMagick, Atomic Red Team, auditd, and all standard Linux tools.
+
+**Note on Tracee:** Tracee (eBPF) requires `/boot` and `/lib/modules` from the host, which aren't available on macOS Docker Desktop. The benchmark uses auditd inside the container + Docker events + MockNet logging as alternative ground truth sources.
 
 MockNet serves 25+ fake websites (ChatGPT, Salesforce, GitHub, Google Drive, Slack, LinkedIn, banking portals, etc.) with realistic UIs. Every form submission is logged as ground truth.
 
@@ -200,17 +214,31 @@ See `data/edr_configs/` for example field mapping configs.
 
 ## AI agents for UI attacks
 
-Some scenarios need an AI to drive the desktop -- clicking around in Firefox, filling in forms, uploading files. This uses computer-use APIs:
+39 of the 67 Linux scenarios require an AI to drive the desktop -- clicking around in Firefox, filling in forms, uploading files. This uses computer-use APIs:
 
-- **Anthropic Claude** (primary) -- set `ANTHROPIC_API_KEY`
-- **OpenAI** (secondary) -- set `OPENAI_API_KEY`
+- **Anthropic Claude** (primary) -- set `AGENT_ANTHROPIC_API_KEY` and `AGENT_ANTHROPIC_MODEL`
+- **OpenAI** (secondary) -- set `AGENT_OPENAI_API_KEY`
 
-The agent connects via VNC, takes screenshots, figures out what to click, and executes the steps. You don't need API keys if you're only running CLI scenarios.
+The agent runs on the **host machine** (not inside the container). It connects via VNC for mouse/keyboard input, takes screenshots via `docker exec` + ImageMagick, and executes each UI step autonomously. API keys never enter the container.
+
+You don't need API keys if you're only running CLI scenarios (use `--skip-ui`).
+
+**Environment variables for UI scenarios:**
+```bash
+AGENT_ANTHROPIC_API_KEY=sk-ant-...   # Anthropic API key
+AGENT_ANTHROPIC_MODEL=claude-sonnet-4-20250514  # model to use
+VNC_HOST=localhost                    # VNC host (localhost when running outside Docker)
+VNC_PORT=5900                         # VNC port
+VNC_PASSWORD=changeme                 # VNC password
+VNC_CONTAINER_NAME=docker-victim-linux-1  # container name for docker exec screenshots
+```
+
+**Important:** These must be set as environment variables on the command line, not just in `.env`. The nested pydantic-settings classes (`AgentSettings`, `VNCSettings`) don't inherit the root `.env` file loading.
 
 ## Running tests
 
 ```bash
-make test              # unit tests
+make test              # 146 unit tests
 make test-integration  # integration tests (needs Docker)
 make test-all          # everything
 make lint              # ruff + mypy
@@ -259,9 +287,25 @@ data/
   edr_configs/        # example EDR field mapping configs
 ```
 
+## CLI options
+
+```
+edr-bench run
+  --platform linux|windows|cloud    Target platform
+  --edr-name "Wazuh"               EDR product name
+  --scenarios data/scenarios/       Scenarios directory
+  --scenario-id COACH-033,LIN-CLI-004  Run specific scenarios
+  --skip-ui                         Skip UI-role steps
+  --no-lifecycle                    Don't start/stop Docker (containers already running)
+  --edr-settle 60                   Seconds to wait for EDR events after execution
+  --dry-run                         Validate without executing
+  --verbose                         Enable debug logging
+```
+
 ## Requirements
 
 - Python 3.11+
 - Docker and Docker Compose
 - An EDR product to test
-- Anthropic or OpenAI API key (only for UI scenarios)
+- Anthropic or OpenAI API key (only for UI scenarios -- 39 of 67 Linux scenarios)
+- macOS, Linux, or WSL2 (macOS Docker Desktop supported with /etc/hosts DNS fallback)

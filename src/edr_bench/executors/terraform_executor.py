@@ -25,7 +25,7 @@ class TerraformExecutor(AttackExecutor):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        self._docker = DockerClientWrapper(settings.docker)
+        self._docker = DockerClientWrapper(settings.docker.host)
         self._aws_region: str = getattr(
             settings.localstack, "region", "us-east-1"
         )
@@ -107,7 +107,7 @@ class TerraformExecutor(AttackExecutor):
         log.debug("terraform_exec", description=description, command=command)
 
         try:
-            exit_code, output = await self._docker.exec_in_container(
+            result = await self._docker.exec_in_container(
                 container_name=_CONTROLLER_CONTAINER,
                 command=command,
                 timeout=timeout,
@@ -116,19 +116,20 @@ class TerraformExecutor(AttackExecutor):
             log.error("terraform_exec_timeout", description=description)
             raise
 
-        if exit_code != 0:
+        if result.exit_code != 0:
+            output = result.stderr or result.stdout
             log.error(
                 "terraform_exec_failed",
                 description=description,
-                exit_code=exit_code,
+                exit_code=result.exit_code,
                 output=output,
             )
             raise RuntimeError(
                 f"Terraform step '{description}' failed with exit code "
-                f"{exit_code}: {output}"
+                f"{result.exit_code}: {output}"
             )
 
-        return exit_code, output
+        return result.exit_code, result.stdout
 
     async def validate(self, step: SimulationStep) -> list[str]:
         errors: list[str] = []

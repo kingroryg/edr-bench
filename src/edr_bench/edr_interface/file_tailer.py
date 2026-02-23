@@ -70,7 +70,7 @@ class FileTailer(EDRListener):
 
     async def _tail_loop(self) -> None:
         """Poll the log file for new lines."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         try:
             # Wait for the file to appear
             while self._running and not self._log_path.exists():

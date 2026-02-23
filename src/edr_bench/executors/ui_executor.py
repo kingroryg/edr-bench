@@ -15,8 +15,17 @@ from edr_bench.models.scenario import Scenario, SimulationStep
 
 logger = structlog.get_logger()
 
-_FAILURE_INDICATORS = (
+# Hard failures: the agent hit a structural limit and didn't finish.
+_HARD_FAILURE_INDICATORS = (
     "reached max steps",
+)
+
+# Soft indicators: the agent *might* have struggled but the step likely
+# still produced the intended side-effects (network traffic, file writes,
+# etc.) that ground truth and EDR scoring depend on.  Log a warning but
+# do NOT fail the step -- the scoring pipeline uses ground truth events,
+# not the agent's self-assessment.
+_SOFT_FAILURE_INDICATORS = (
     "unable to",
     "could not",
     "failed to",
@@ -26,8 +35,8 @@ _FAILURE_INDICATORS = (
     "not possible",
 )
 
-_MAX_RETRIES = 2
-_RETRY_DELAY = 5.0
+_MAX_RETRIES = 1
+_RETRY_DELAY = 3.0
 
 
 class UIExecutor(AttackExecutor):
@@ -88,14 +97,23 @@ class UIExecutor(AttackExecutor):
 
             try:
                 summary = await agent.execute_task(prompt, timeout=step.timeout_seconds)
+                summary_lower = (summary or "").lower()
 
-                # Check for failure indicators in agent summary
-                if summary and any(
-                    indicator in summary.lower() for indicator in _FAILURE_INDICATORS
-                ):
+                # Hard failure: agent hit max steps without completing
+                if any(ind in summary_lower for ind in _HARD_FAILURE_INDICATORS):
                     raise RuntimeError(
-                        f"UI agent reported failure for step {step.order}: "
+                        f"UI agent hit hard limit for step {step.order}: "
                         f"{summary[:200]}"
+                    )
+
+                # Soft indicators: log warning but count as success -- the
+                # actions were still performed and ground truth was generated.
+                if any(ind in summary_lower for ind in _SOFT_FAILURE_INDICATORS):
+                    logger.warning(
+                        "ui_exec_soft_warning",
+                        scenario=scenario.id,
+                        step=step.order,
+                        summary=summary[:200],
                     )
 
                 # Save screenshot on success

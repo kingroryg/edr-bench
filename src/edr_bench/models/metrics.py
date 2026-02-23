@@ -61,6 +61,10 @@ class ScenarioResult(BaseModel):
         default=None,
         description="TTD percentiles: mean, p50, p90, p95, max (in seconds)",
     )
+    ttd_raw_deltas: list[float] = Field(
+        default_factory=list,
+        description="Raw per-event TTD deltas in seconds (for aggregate percentile computation)",
+    )
     blocking_efficacy: float = Field(
         ge=0.0, le=1.0,
         description="Fraction of blocking-expected events actually blocked",
@@ -126,6 +130,10 @@ class BenchmarkReport(BaseModel):
     overall_detection_rate: float = Field(ge=0.0, le=1.0)
     overall_contextual_accuracy: float = Field(ge=0.0, le=1.0)
     average_time_to_detect: float | None = None
+    time_to_detect_percentiles: dict[str, float] | None = Field(
+        default=None,
+        description="Aggregate TTD percentiles: p50, p90, p95, max (in seconds)",
+    )
     overall_blocking_efficacy: float = Field(ge=0.0, le=1.0)
     overall_noise_ratio: float = Field(ge=0.0)
 

@@ -1,4 +1,6 @@
-.PHONY: build up down logs test lint format clean
+.PHONY: build up down logs test lint format clean \
+       build-wazuh up-wazuh run-wazuh down-wazuh \
+       build-falco up-falco run-falco down-falco
 
 COMPOSE := docker compose -f docker/docker-compose.yml
 PROFILE ?= linux
@@ -51,6 +53,33 @@ run-dry:
 
 report:
 	edr-bench report $(REPORT_FILE) -o $(REPORT_OUTPUT)
+
+# --- Wazuh targets ---
+build-wazuh:
+	$(COMPOSE) --profile linux --profile wazuh build
+	@echo "Remember to set WAZUH_AGENT_ENABLED=true in .env"
+
+up-wazuh:
+	WAZUH_AGENT_ENABLED=true $(COMPOSE) --profile linux --profile wazuh up -d
+
+run-wazuh:
+	edr-bench run --platform linux --edr-name Wazuh
+
+down-wazuh:
+	$(COMPOSE) --profile linux --profile wazuh down -v
+
+# --- Falco targets ---
+build-falco:
+	$(COMPOSE) --profile linux --profile falco build
+
+up-falco:
+	$(COMPOSE) --profile linux --profile falco up -d
+
+run-falco:
+	edr-bench run --platform linux --edr-name Falco
+
+down-falco:
+	$(COMPOSE) --profile linux --profile falco down -v
 
 clean:
 	$(COMPOSE) down -v --rmi local

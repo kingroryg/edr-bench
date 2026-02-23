@@ -9,6 +9,7 @@ from typing import Any
 
 import structlog
 
+from edr_bench.config.settings import Settings
 from edr_bench.models.ground_truth import GroundTruthEvent, GroundTruthSource
 
 logger = structlog.get_logger(__name__)
@@ -24,7 +25,7 @@ _NETWORK_EVENTS = frozenset({"connect", "accept", "bind", "listen"})
 class TraceeMonitor:
     """Consumes Tracee JSON output and converts events to GroundTruthEvent."""
 
-    def __init__(self, settings: Any) -> None:
+    def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._tracee_cfg = settings.tracee
         self._container_id: str | None = None
@@ -96,9 +97,9 @@ class TraceeMonitor:
 
     async def _wait_for_file(self, timeout: float = 30.0) -> None:
         """Wait until the Tracee output file exists."""
-        deadline = asyncio.get_event_loop().time() + timeout
+        deadline = asyncio.get_running_loop().time() + timeout
         while not self._output_path.exists():
-            if asyncio.get_event_loop().time() > deadline:
+            if asyncio.get_running_loop().time() > deadline:
                 raise FileNotFoundError(
                     f"Tracee output not found after {timeout}s: {self._output_path}"
                 )
@@ -106,7 +107,7 @@ class TraceeMonitor:
 
     async def _tail_file(self):  # noqa: ANN201 – async generator
         """Yield new JSON lines as they are appended to the file."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         with self._output_path.open("r") as fh:
             while self._running:
                 line = await loop.run_in_executor(None, fh.readline)

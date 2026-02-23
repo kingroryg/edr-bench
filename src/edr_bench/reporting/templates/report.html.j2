@@ -41,6 +41,20 @@
                 </div>
                 <div class="score-label">Avg Time to Detect</div>
             </div>
+            {% if report.time_to_detect_percentiles %}
+            <div class="score-card">
+                <div class="score-value">
+                    {{ "%.1f"|format(report.time_to_detect_percentiles.p50) }}s
+                </div>
+                <div class="score-label">p50 TTD</div>
+            </div>
+            <div class="score-card">
+                <div class="score-value">
+                    {{ "%.1f"|format(report.time_to_detect_percentiles.p95) }}s
+                </div>
+                <div class="score-label">p95 TTD</div>
+            </div>
+            {% endif %}
             <div class="score-card">
                 <div class="score-value {{ 'good' if report.overall_blocking_efficacy >= 0.7 else 'warn' if report.overall_blocking_efficacy >= 0.4 else 'bad' }}">
                     {{ "%.1f"|format(report.overall_blocking_efficacy * 100) }}%
@@ -78,15 +92,21 @@
                     <th>Technique</th>
                     <th>Exec Completeness</th>
                     <th>Detection Rate</th>
+                    <th>Attack Chain</th>
                     <th>TTD</th>
-                    <th>Errors</th>
+                    <th>Noise</th>
                 </tr>
             </thead>
             <tbody>
                 {% for result in report.scenario_results %}
-                <tr class="{{ 'error-row' if result.errors else '' }}">
+                <tr class="scenario-row {{ 'error-row' if result.errors else '' }}" data-scenario-idx="{{ loop.index0 }}">
                     <td>{{ result.scenario_id }}</td>
-                    <td>{{ result.scenario_name }}</td>
+                    <td class="scenario-name-cell">
+                        <button class="expand-btn" aria-expanded="false" aria-controls="steps-{{ loop.index0 }}">
+                            <span class="expand-icon">&#9654;</span>
+                            {{ result.scenario_name }}
+                        </button>
+                    </td>
                     <td>{{ result.platform.value }}</td>
                     <td>{{ result.mitre_technique_id }}</td>
                     <td class="{{ 'good' if result.execution_completeness >= 0.9 else 'warn' if result.execution_completeness >= 0.5 else 'bad' }}">
@@ -94,15 +114,105 @@
                     </td>
                     <td class="{{ 'good' if result.detection_rate >= 0.7 else 'warn' if result.detection_rate >= 0.4 else 'bad' }}">
                         {{ "%.0f"|format(result.detection_rate * 100) }}%
+                        <span class="detection-detail">({{ result.matched_count }}/{{ result.ground_truth_count }})</span>
                     </td>
                     <td>
-                        {% if result.time_to_detect_seconds is not none %}
-                            {{ "%.1f"|format(result.time_to_detect_seconds) }}s
+                        {% if result.attack_chain_coverage is not none %}
+                            {% set acc = result.attack_chain_coverage %}
+                            <span class="chain-badge {{ 'chain-full' if acc >= 0.8 else 'chain-partial' if acc >= 0.3 else 'chain-blind' }}">
+                                {% if acc >= 0.8 %}
+                                    Full Chain
+                                {% elif acc >= 0.3 %}
+                                    Partial
+                                {% else %}
+                                    Blind
+                                {% endif %}
+                            </span>
+                            <span class="chain-detail">
+                                {% set ns = result.step_results|selectattr('status', 'ne', 'skipped')|list %}
+                                {% set det = ns|selectattr('detected')|list %}
+                                {{ det|length }}/{{ ns|length }} steps
+                            </span>
                         {% else %}
                             —
                         {% endif %}
                     </td>
-                    <td>{{ result.errors|length }}</td>
+                    <td>
+                        {% if result.time_to_detect_seconds is not none %}
+                            {{ "%.1f"|format(result.time_to_detect_seconds) }}s
+                            {% if result.time_to_detect_percentiles %}
+                                <span class="detection-detail">(p50: {{ "%.1f"|format(result.time_to_detect_percentiles.p50) }}s / p95: {{ "%.1f"|format(result.time_to_detect_percentiles.p95) }}s)</span>
+                            {% endif %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="{{ 'good' if result.noise_ratio <= 0.1 else 'warn' if result.noise_ratio <= 0.5 else 'bad' }}">
+                        {{ "%.0f"|format(result.noise_ratio * 100) }}%
+                        <span class="detection-detail">({{ result.false_positive_count }} FP)</span>
+                    </td>
+                </tr>
+                <!-- Collapsible step detail row -->
+                <tr class="step-detail-row" id="steps-{{ loop.index0 }}">
+                    <td colspan="9">
+                        <div class="step-detail-content">
+                            <div class="step-header-bar">
+                                <strong>Attack Steps</strong>
+                                {% if result.attack_chain_coverage is not none %}
+                                <span class="chain-summary {{ 'chain-full' if result.attack_chain_coverage >= 0.8 else 'chain-partial' if result.attack_chain_coverage >= 0.3 else 'chain-blind' }}">
+                                    {% if result.attack_chain_coverage >= 0.8 %}
+                                        EDR saw the full attack chain
+                                    {% elif result.attack_chain_coverage >= 0.3 %}
+                                        EDR saw fragments — missed the big picture
+                                    {% else %}
+                                        EDR was essentially blind to this attack
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="step-list">
+                                {% for step in result.step_results %}
+                                <div class="step-card {{ 'step-detected' if step.detected else 'step-missed' if step.status == 'success' else 'step-failed' if step.status == 'failed' else 'step-skipped' }}">
+                                    <div class="step-card-header">
+                                        <span class="step-number">Step {{ step.step_order }}</span>
+                                        <span class="step-role">{{ step.role }}</span>
+                                        {% if step.status == 'skipped' %}
+                                            <span class="step-badge step-badge-skipped">SKIPPED</span>
+                                        {% elif step.status == 'failed' %}
+                                            <span class="step-badge step-badge-failed">FAILED</span>
+                                        {% elif step.status == 'timeout' %}
+                                            <span class="step-badge step-badge-failed">TIMEOUT</span>
+                                        {% elif step.detected %}
+                                            <span class="step-badge step-badge-detected">DETECTED</span>
+                                        {% else %}
+                                            <span class="step-badge step-badge-missed">MISSED</span>
+                                        {% endif %}
+                                        <span class="step-duration">{{ "%.2f"|format(step.duration_seconds) }}s</span>
+                                    </div>
+                                    {% if step.description %}
+                                    <div class="step-description">{{ step.description }}</div>
+                                    {% endif %}
+                                    {% if step.command %}
+                                    <div class="step-command"><code>{{ step.command[:200] }}{{ '...' if step.command|length > 200 else '' }}</code></div>
+                                    {% endif %}
+                                    {% if step.finding_summaries %}
+                                    <div class="step-findings">
+                                        <span class="findings-label">EDR alerts ({{ step.matched_finding_count }}):</span>
+                                        <ul>
+                                            {% for summary in step.finding_summaries %}
+                                            <li>{{ summary }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                    {% if step.error_message %}
+                                    <div class="step-error">{{ step.error_message }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -77,7 +77,7 @@ class DockerEventCollector:
             try:
                 self._client.close()
             except Exception:
-                pass
+                logger.debug("docker_event_collector.close_error", exc_info=True)
             self._client = None
 
         logger.info(
@@ -95,7 +95,7 @@ class DockerEventCollector:
         if self._client is None:
             return
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         try:
             events_gen = self._client.events(
                 decode=True,
@@ -125,6 +125,7 @@ class DockerEventCollector:
         except StopIteration:
             return None
         except Exception:
+            logger.debug("docker_event_collector.next_event_error", exc_info=True)
             return None
 
     def _map_event(self, raw: dict[str, Any]) -> GroundTruthEvent | None:
@@ -153,7 +154,7 @@ class DockerEventCollector:
             timestamp=timestamp,
             source=GroundTruthSource.DOCKER_EVENTS,
             scenario_id="",
-            step_order=0,
+            step_order=None,
             container_id=str(container_id),
             event_type=event_type,
             process_name=process_name,

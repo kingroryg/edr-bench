@@ -1,0 +1,17 @@
+# Falco EDR configuration for edr-bench
+# Falco writes JSON events to a file on a shared volume.
+
+type: file_tailer
+log_path: /var/log/falco/events.json
+format: json
+edr_name: Falco
+
+# Falco JSON output has output_fields nested under the top-level event.
+# The FalcoNormalizer lifts those fields automatically.
+
+# Falco severity uses priority strings mapped as:
+#   emergency/alert -> critical
+#   error           -> high
+#   warning         -> medium
+#   notice          -> low
+#   debug           -> info

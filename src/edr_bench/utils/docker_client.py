@@ -11,6 +11,8 @@ import docker.errors
 import docker.models.containers
 import structlog
 
+from edr_bench.utils.retry import retry_async
+
 logger = structlog.get_logger(__name__)
 
 
@@ -56,6 +58,9 @@ class DockerClientWrapper:
     ) -> docker.models.containers.Container:
         """Get a container by name or ID (synchronous).
 
+        First tries an exact match, then falls back to a suffix match
+        so callers don't need to know the Compose project prefix.
+
         Args:
             name: The container name or ID.
 
@@ -65,7 +70,21 @@ class DockerClientWrapper:
         Raises:
             docker.errors.NotFound: If no container with that name exists.
         """
-        return self._client.containers.get(name)
+        try:
+            return self._client.containers.get(name)
+        except docker.errors.NotFound:
+            # Fall back to suffix match (handles varying Compose project names).
+            # Strip any known project prefix to get the service-level suffix,
+            # e.g. "edr-bench-victim-linux-1" → "victim-linux-1".
+            suffix = name
+            for prefix in ("edr-bench-", "docker-"):
+                if suffix.startswith(prefix):
+                    suffix = suffix[len(prefix):]
+                    break
+            for container in self._client.containers.list(all=True):
+                if container.name.endswith(suffix):
+                    return container
+            raise
 
     async def get_container_async(
         self, name: str
@@ -149,6 +168,7 @@ class DockerClientWrapper:
     # Command execution
     # ------------------------------------------------------------------
 
+    @retry_async(max_attempts=3, min_delay=1.0, max_delay=10.0, retry_on=(docker.errors.APIError, ConnectionError, OSError))
     async def exec_in_container(
         self,
         container_name: str,
@@ -182,8 +202,11 @@ class DockerClientWrapper:
 
         def _exec() -> ExecResult:
             container = self.get_container(container_name)
+            # Wrap string commands in a shell so operators like &&, |, ;
+            # and builtins like cd work correctly.
+            cmd = ["sh", "-c", command] if isinstance(command, str) else command
             exec_kwargs: dict[str, Any] = {
-                "cmd": command,
+                "cmd": cmd,
                 "stdout": True,
                 "stderr": True,
                 "demux": True,
