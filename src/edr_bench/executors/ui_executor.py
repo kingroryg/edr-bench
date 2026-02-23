@@ -35,7 +35,7 @@ _SOFT_FAILURE_INDICATORS = (
     "not possible",
 )
 
-_MAX_RETRIES = 1
+_MAX_RETRIES = 2
 _RETRY_DELAY = 3.0
 
 
