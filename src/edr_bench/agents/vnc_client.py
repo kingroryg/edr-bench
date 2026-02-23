@@ -218,11 +218,17 @@ class VNCClient:
             if m == p and " " in p:
                 sub_keys = [_map_key_name(s) for s in p.split()]
                 for sk in sub_keys:
-                    self._connection.keyboard.press(sk)
+                    try:
+                        self._connection.keyboard.press(sk)
+                    except (KeyError, ValueError) as e:
+                        logger.warning("vnc_key_skipped", key=sk, error=str(e))
             else:
                 mapped.append(m)
         if mapped:
-            self._connection.keyboard.press(*mapped)
+            try:
+                self._connection.keyboard.press(*mapped)
+            except (KeyError, ValueError) as e:
+                logger.warning("vnc_key_skipped", key=str(mapped), error=str(e))
 
     async def type_text(self, text: str, delay: float = 0.02) -> None:
         """Type text character by character."""
@@ -231,7 +237,11 @@ class VNCClient:
         for char in text:
             # Map special characters (newline, tab, etc.) to X11 key names
             key = _CHAR_ALIASES.get(char, char)
-            self._connection.keyboard.press(key)
+            try:
+                self._connection.keyboard.press(key)
+            except (KeyError, ValueError):
+                # Skip characters asyncvnc can't handle (Unicode emoji, etc.)
+                logger.warning("vnc_char_skipped", char=repr(char))
             await asyncio.sleep(delay)
 
     async def mouse_drag(self, x1: int, y1: int, x2: int, y2: int) -> None:

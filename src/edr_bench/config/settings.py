@@ -36,7 +36,7 @@ class AgentSettings(BaseSettings):
     anthropic_model: str = "claude-sonnet-4-5-20250514"
     openai_api_key: str = ""
     openai_model: str = "computer-use-preview"
-    max_agent_steps: int = 50
+    max_agent_steps: int = 75
     screenshot_timeout: float = 5.0
 
 
