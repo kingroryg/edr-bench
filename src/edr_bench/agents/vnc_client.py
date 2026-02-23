@@ -43,9 +43,22 @@ _KEY_ALIASES: dict[str, str] = {
     "insert": "Insert",
 }
 
+# Characters that asyncvnc can't handle as single-char keysyms.
+# Map them to the correct X11 key name.
+_CHAR_ALIASES: dict[str, str] = {
+    "\n": "Return",
+    "\r": "Return",
+    "\t": "Tab",
+    "\x1b": "Esc",
+    "\x7f": "Backspace",
+}
+
 
 def _map_key_name(key: str) -> str:
     """Map a key name to an asyncvnc-compatible name."""
+    # Check special characters first (\n, \t, etc.)
+    if key in _CHAR_ALIASES:
+        return _CHAR_ALIASES[key]
     # Check case-insensitive alias first
     lower = key.lower()
     if lower in _KEY_ALIASES:
@@ -109,11 +122,12 @@ class VNCClient:
         can hang on static screens or crash on unsupported VNC encodings).
         Falls back to asyncvnc if docker exec is unavailable.
         """
-        if not self._connection:
-            raise RuntimeError("VNC not connected")
-
+        # Docker exec screenshots work even after VNC disconnect
         if self._container_name:
             return await self._screenshot_via_docker()
+
+        if not self._connection:
+            raise RuntimeError("VNC not connected")
 
         # Fallback: direct VNC screenshot (may hang or fail with some servers)
         pixels = await self._connection.screenshot()
@@ -170,7 +184,9 @@ class VNCClient:
         if not self._connection:
             raise RuntimeError("VNC not connected")
         for char in text:
-            self._connection.keyboard.press(char)
+            # Map special characters (newline, tab, etc.) to X11 key names
+            key = _CHAR_ALIASES.get(char, char)
+            self._connection.keyboard.press(key)
             await asyncio.sleep(delay)
 
     async def mouse_drag(self, x1: int, y1: int, x2: int, y2: int) -> None:
