@@ -211,9 +211,18 @@ class BenchmarkOrchestrator:
 
             try:
                 executor = self._get_executor(step)
+                # UI steps need much longer timeouts: each CU action cycle
+                # takes ~4s and a complex step can require 50 actions.
+                # Minimum 300s for UI, use step.timeout_seconds for CLI.
+                _UI_MIN_TIMEOUT = 300.0
+                raw_timeout = step.timeout_seconds if hasattr(step, "timeout_seconds") and step.timeout_seconds else None
+                if step.role == Role.UI:
+                    timeout = max(raw_timeout or _UI_MIN_TIMEOUT, _UI_MIN_TIMEOUT)
+                else:
+                    timeout = raw_timeout
                 await asyncio.wait_for(
                     executor.execute(step, scenario),
-                    timeout=step.timeout_seconds if hasattr(step, "timeout_seconds") and step.timeout_seconds else None,
+                    timeout=timeout,
                 )
             except asyncio.TimeoutError:
                 step_status = "timeout"
