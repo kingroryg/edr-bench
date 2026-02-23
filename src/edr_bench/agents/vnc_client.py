@@ -102,15 +102,29 @@ class VNCClient:
         self._connection = None
         self._ctx = None
 
-    async def connect(self) -> None:
-        """Establish VNC connection."""
+    async def connect(self, retries: int = 3, delay: float = 2.0) -> None:
+        """Establish VNC connection with retries."""
         import asyncvnc
 
-        self._ctx = asyncvnc.connect(
-            self.host, port=self.port, password=self.password
-        )
-        self._connection = await self._ctx.__aenter__()
-        logger.info("vnc_connected", host=self.host, port=self.port)
+        last_error: Exception | None = None
+        for attempt in range(retries):
+            try:
+                self._ctx = asyncvnc.connect(
+                    self.host, port=self.port, password=self.password
+                )
+                self._connection = await self._ctx.__aenter__()
+                logger.info("vnc_connected", host=self.host, port=self.port)
+                return
+            except Exception as e:
+                last_error = e
+                if attempt < retries - 1:
+                    logger.warning(
+                        "vnc_connect_retry",
+                        attempt=attempt + 1,
+                        error=str(e),
+                    )
+                    await asyncio.sleep(delay)
+        raise RuntimeError(f"VNC connect failed after {retries} attempts: {last_error}")
 
     async def disconnect(self) -> None:
         """Close VNC connection."""
