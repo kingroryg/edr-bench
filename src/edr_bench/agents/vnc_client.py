@@ -41,6 +41,21 @@ _KEY_ALIASES: dict[str, str] = {
     "pagedown": "Page_Down",
     "page_down": "Page_Down",
     "insert": "Insert",
+    # Multi-word modifier names that Claude CU agent sometimes sends
+    "left shift": "Shift",
+    "right shift": "Shift",
+    "left ctrl": "Ctrl",
+    "right ctrl": "Ctrl",
+    "left alt": "Alt",
+    "right alt": "Alt",
+    "left super": "Super",
+    "right super": "Super",
+    "left meta": "Super",
+    "right meta": "Super",
+    "caps lock": "Caps_Lock",
+    "num lock": "Num_Lock",
+    "scroll lock": "Scroll_Lock",
+    "print screen": "Print",
 }
 
 # Characters that asyncvnc can't handle as single-char keysyms.
@@ -169,15 +184,31 @@ class VNCClient:
         await self.mouse_click(x, y)
 
     async def key_press(self, key: str) -> None:
-        """Press a key or key combination (e.g., 'alt+F2', 'ctrl+c')."""
+        """Press a key or key combination (e.g., 'alt+F2', 'ctrl+c').
+
+        Handles several Claude CU agent patterns:
+        - Compound combos: "alt+F2", "ctrl+shift+c"
+        - Multi-word key names: "Left shift" (mapped to Shift)
+        - Repeated keys with spaces: "Tab Tab Tab" (pressed sequentially)
+        """
         if not self._connection:
             raise RuntimeError("VNC not connected")
 
         # Split compound key combos on '+' (e.g., "alt+F2" -> ["alt", "F2"])
         parts = [k.strip() for k in key.split("+")]
-        # Map common Claude CU key names to asyncvnc names
-        mapped = [_map_key_name(p) for p in parts]
-        self._connection.keyboard.press(*mapped)
+        mapped: list[str] = []
+        for p in parts:
+            m = _map_key_name(p)
+            # If mapping returned unchanged AND contains spaces, it might be
+            # repeated keys like "Tab Tab Tab" -- split and press sequentially.
+            if m == p and " " in p:
+                sub_keys = [_map_key_name(s) for s in p.split()]
+                for sk in sub_keys:
+                    self._connection.keyboard.press(sk)
+            else:
+                mapped.append(m)
+        if mapped:
+            self._connection.keyboard.press(*mapped)
 
     async def type_text(self, text: str, delay: float = 0.02) -> None:
         """Type text character by character."""
